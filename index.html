@@ -115,6 +115,8 @@ section{margin-top:34px}
 .label .l{display:flex;align-items:center;gap:8px}
 .big{font-size:40px;font-weight:680;letter-spacing:-.03em;line-height:1.1;margin:8px 0 2px}
 .big .cur{font-size:.6em;vertical-align:.5em;margin-right:2px;color:var(--ink2);font-weight:600}
+.big .blank,.mid .blank{color:var(--faint);font-weight:500}
+.big .blank{font-size:.7em}
 .big .cents{font-size:.5em;color:var(--muted);font-weight:600;letter-spacing:0}
 .mid{font-size:28px;font-weight:670;letter-spacing:-.025em;line-height:1.15;margin:6px 0 2px}
 .mid .cur{font-size:.62em;vertical-align:.42em;margin-right:1px;color:var(--ink2)}
@@ -161,9 +163,12 @@ section{margin-top:34px}
 .cal{width:46px;height:50px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .cal small{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
 .cal b{font-size:19px;font-weight:700;margin-top:3px}
+.cal.nodate{background:var(--track);color:var(--faint)}
+.cal.nodate b{margin:0}
 .bill .name{font-weight:580}
 .bill .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .bill .amt{font-weight:620}
+.bill-note{display:block;font-size:12.5px;color:var(--faint);margin-top:2px;overflow-wrap:anywhere}
 .odd{display:flex;gap:12px;align-items:flex-start}
 .odd .ic{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
 .odd ul{margin:2px 0 0;padding-left:18px}
@@ -351,7 +356,7 @@ function money(v, cents = true) {
   return (v < 0 ? "−$" : "$") + s;
 }
 function bigMoney(v) {
-  if (!isNum(v)) return '<span class="cents">—</span>';
+  if (!isNum(v)) return '<span class="blank" title="Not recorded">—</span>';
   const [w, c] = nf2.format(Math.abs(v)).split(".");
   return `${v < 0 ? "−" : ""}<span class="cur">$</span>${w}<span class="cents">.${c}</span>`;
 }
@@ -398,10 +403,10 @@ const I = {
   clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
 };
 let EMPTY = false;
-const waiting = (sm, msg) => sm && EMPTY
+const waiting = (sm, msg, title) => sm && EMPTY
   ? `<div class="waiting sm ghosted"><div class="wi">${I.sprout}</div><p>${msg}</p></div>`
   : sm
-  ? `<div class="waiting sm"><div class="wi">${I.sprout}</div><div><b>Waiting for CFO's first snapshot</b><p>${msg || "This fills in after the next update."}</p></div></div>`
+  ? `<div class="waiting sm"><div class="wi">${I.sprout}</div><div><b>${title || "Waiting for CFO's first snapshot"}</b><p>${msg || "This fills in after the next update."}</p></div></div>`
   : `<div class="waiting"><div class="wi">${I.hour}</div><b>Waiting for CFO's first snapshot</b><p>${msg || "This fills in after the next update."}</p></div>`;
 
 /* ------------------------------------------------ render */
@@ -458,16 +463,16 @@ function render(data) {
   out.push(`<section><div class="sh"><h2>This week</h2><span class="meta num">${W ? esc(weekRange(W.week_start, W.week_end)) : ""}</span></div>
     ${W ? `<div class="grid two">
       <div class="card"><div class="label"><span class="l">Free household cash left</span></div>
-        <div class="big num ${isNum(W.free_household_cash_week) && W.free_household_cash_week < 0 ? "neg" : ""}">${bigMoney(W.free_household_cash_week)}</div>
-        ${progress(W.spend_to_date, wTarget, "weekly target")}</div>
+        <div class="big num ${isNum(W.free_household_cash_week) && W.free_household_cash_week < 0 ? "neg" : ""}">${bigMoney(W.free_household_cash_week)}</div>${isNum(W.free_household_cash_week) ? "" : '<div class="cap">Not recorded in this snapshot</div>'}
+        ${progress(W.spend_to_date, wTarget, isNum(W.weekly_burn_target) ? "weekly target" : "default target")}</div>
       <div class="card"><div class="label"><span class="l">Spending by category</span></div>
-        ${C.week && C.week.items.length ? catRows(C.week.items, { scale: wTarget }) : waiting(true, "Category totals for this week will show here.")}</div>
+        ${C.week && C.week.items.length ? catRows(C.week.items, { scale: wTarget }) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
     </div>` : `<div class="card">${waiting(true, "Free cash, spending vs the weekly target, bills and odd charges.")}</div>`}
     <div class="grid two" style="margin-top:12px">
       <div class="card"><div class="label"><span class="l">Bills due this week</span>${bills.length ? `<span class="num">${money(bills.reduce((s, b) => s + (isNum(b.amount) ? b.amount : 0), 0), false)}</span>` : ""}</div>
         ${data.bills ? (bills.length ? `<ul class="rows" style="margin-top:12px">${bills.map(b => `<li><div class="bill">
-            <div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${b.due_date ? ymd(b.due_date).getUTCDate() : "—"}</b></div>
-            <div><div class="name">${esc(b.item)}</div><div class="cap">${b.due_date ? esc(fmtD(b.due_date, { weekday: "long", month: "short", day: "numeric" })) : "Date not set"}</div></div>
+            ${b.due_date ? `<div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${ymd(b.due_date).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`}
+            ${billText(b)}
             <div class="right"><span class="amt num">${money(b.amount)}</span>${b.status ? `<span class="chip ${b.status === "GREEN" ? "good" : "bad"}">${b.status}</span>` : ""}</div></div></li>`).join("")}</ul>`
           : `<p class="cap">No bills due this week.</p>`) : waiting(true, "Bills due this week with a GREEN / RED check.")}</div>
       <div class="card"><div class="label"><span class="l">Odd charges · last 48h</span></div>
@@ -483,8 +488,8 @@ function render(data) {
   out.push(`<section><div class="sh"><h2>This month</h2><span class="meta">${esc(monthName)}</span></div>
     ${M ? `<div class="grid two">
       <div class="card"><div class="label"><span class="l">Free household cash this month</span></div>
-        <div class="big num ${isNum(M.free_household_cash_month) && M.free_household_cash_month < 0 ? "neg" : ""}">${bigMoney(M.free_household_cash_month)}</div>
-        ${progress(M.spend_to_date, mTarget, "burn target")}</div>
+        <div class="big num ${isNum(M.free_household_cash_month) && M.free_household_cash_month < 0 ? "neg" : ""}">${bigMoney(M.free_household_cash_month)}</div>${isNum(M.free_household_cash_month) ? "" : '<div class="cap">Not recorded in this snapshot</div>'}
+        ${progress(M.spend_to_date, mTarget, isNum(M.monthly_burn_target) ? "burn target" : "default target")}</div>
       <div class="card"><div class="label"><span class="l">Income received</span></div><div class="big num">${bigMoney(M.income_received)}</div>
         <div class="cap">Before the 20% tax skim</div></div>
     </div>` : ""}
@@ -501,7 +506,7 @@ function render(data) {
     <div class="note">${I.shield}<span>${esc((data.labels && data.labels.extra_principal_rule) || "Extra principal comes only from household surplus or cancelled leaks.")}</span></div>
     ${loans.length ? `<div class="grid three">${loans.map(l => `<div class="card loan">
         <div class="top"><span class="ord num">${l.loan_order}</span><h3>${esc(cap1(l.loan_name))}</h3>${l === focus ? `<span class="chip focus">Extra goes here</span>` : ""}</div>
-        <div class="mid num" style="margin-top:12px">${bigMoney(l.balance)}</div><div class="cap">Balance</div>
+        <div class="mid num" style="margin-top:12px">${bigMoney(l.balance)}</div><div class="cap">${isNum(l.balance) ? "Balance" : "Balance not recorded yet"}</div>
         <div class="stats num">
           <div class="stat"><small>Rate</small><b>${isNum(l.rate_pct) ? l.rate_pct.toFixed(2) + "%" : "—"}</b></div>
           <div class="stat"><small>Payment</small><b>${money(l.payment, false)}${isNum(l.payment) ? '<span class="cap">/mo</span>' : ""}</b></div>
@@ -529,16 +534,16 @@ function render(data) {
   out.push(`<section><div class="sh"><h2>Trends</h2></div>
     <div class="grid">
       <div class="card"><div class="label"><span class="l">Cash buckets by month</span></div>
-        ${mb.length ? `<div class="legend"><span><i style="background:var(--accent)"></i>Household</span><span><i style="background:var(--c2)"></i>Practice</span><span><i class="dash"></i>Tax reserve</span></div>
-          <div class="chartbox"><canvas id="cashChart" aria-label="Cash buckets by month"></canvas></div>` : waiting(true, "Month-end Household, Practice and Tax reserve over time.")}</div>
+        ${mb.length > 1 ? `<div class="legend"><span><i style="background:var(--accent)"></i>Household</span><span><i style="background:var(--c2)"></i>Practice</span><span><i class="dash"></i>Tax reserve</span></div>
+          <div class="chartbox"><canvas id="cashChart" aria-label="Cash buckets by month"></canvas></div>` : waiting(true, mb.length ? "The trend line starts once a second month is recorded." : "Month-end Household, Practice and Tax reserve over time.", mb.length ? "One month so far" : "")}</div>
       <div class="card"><div class="label"><span class="l">Loan balances</span></div>
-        ${lh && lh.dates.length ? `<ul class="rows" style="margin-top:10px">${lh.series.map(s => {
+        ${lh && lh.series.some(x => x.balances.some(isNum)) ? `<ul class="rows" style="margin-top:10px">${lh.series.map(s => {
           const vals = s.balances.filter(isNum), first = vals[0], last = vals[vals.length - 1];
           const firstIdx = s.balances.findIndex(isNum);
           return `<li><div class="spark"><div><div class="name" style="font-weight:600"><span class="ord num" style="display:inline-grid;width:22px;height:22px;font-size:12px;margin-right:8px">${s.loan_order}</span>${esc(cap1(s.loan_name))}</div></div>
             <div class="delta num">${isNum(last) ? `<b style="color:var(--ink);font-weight:620">${money(last, false)}</b>` : "—"}${vals.length > 1 && first !== last ? `<br>${last < first ? "↓" : "↑"} ${money(Math.abs(last - first), false)} since ${esc(dayShort(lh.dates[firstIdx]))}` : ""}</div>
             <div class="sbox"><canvas id="loan${s.loan_order}"></canvas></div></div></li>`;
-        }).join("")}</ul>` : waiting(true, "Each loan's balance falling over time, in payoff order.")}</div>
+        }).join("")}</ul>` : waiting(true, lh ? "Charts appear once balances are recorded." : "Each loan's balance falling over time, in payoff order.", lh ? "Not recorded yet" : "")}</div>
     </div></section>`);
 
   out.push(`<footer>${data.example ? "<b>EXAMPLE DATA</b> — not real numbers<br>" : ""}Private · end-to-end encrypted · times in Mountain Time<br>Source: ${esc(data.source || "snapshot sheet")}</footer>`);
@@ -550,6 +555,12 @@ function render(data) {
   whenChart(drawCharts);
 }
 
+function billText(b) {
+  const m = /^(.*?)\s*\((.+)\)\s*$/.exec(b.item || "");
+  const title = m ? m[1] : b.item, note = m ? m[2] : "";
+  const when = b.due_date ? fmtD(b.due_date, { weekday: "long", month: "short", day: "numeric" }) : "Due date not recorded";
+  return `<div style="min-width:0"><div class="name">${esc(title)}</div><div class="cap">${esc(when)}${note ? `<span class="bill-note">${esc(note)}</span>` : ""}</div></div>`;
+}
 function oddCharges(t) {
   if (!t || /^none$/i.test(t.trim())) return `<div class="odd" style="margin-top:12px"><div class="ic">${I.check}</div><div><b style="font-weight:600">None</b><div class="cap">Nothing unusual in the last 48 hours.</div></div></div>`;
   const parts = t.split(/\s*;\s*|\n+/).filter(Boolean);
