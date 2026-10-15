@@ -271,7 +271,7 @@ body.has-tabs #app{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .evs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .ev{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:start;background:var(--card);border-radius:18px;box-shadow:var(--shadow);
   padding:13px 14px 13px 0;position:relative;overflow:hidden}
-.ev::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--k,var(--faint))}
+.ev::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kbar,var(--k,var(--faint)))}
 .ev-time{text-align:right;font-weight:650;font-size:14.5px;line-height:1.2;color:var(--ink);padding-top:1px}
 .ev-time small{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;margin-top:2px}
 .ev-time.allday{font-size:11.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;padding-top:3px}
@@ -733,6 +733,12 @@ function famCtx(data) {
   const kids = F.kids || [], byName = {};
   kids.forEach(k => byName[k.name.toLowerCase()] = k);
   const neutral = F.family_color || "var(--c3)";
+  const barOf = names => {
+    const cs = (names || []).map(n => byName[n.toLowerCase()]).filter(Boolean).map(k => k.color);
+    if (cs.length < 2) return cs[0] || neutral;
+    const step = 100 / cs.length;
+    return `linear-gradient(to bottom, ${cs.map((c, i) => `${c} ${(i * step).toFixed(1)}% ${((i + 1) * step).toFixed(1)}%`).join(", ")})`;
+  };
   const colorOf = names => (names && names.length && byName[names[0].toLowerCase()]) ? byName[names[0].toLowerCase()].color : neutral;
   const chip = (name) => { const k = byName[(name || "").toLowerCase()]; return `<span class="kidchip" style="--k:${k ? k.color : neutral}">${esc(k ? k.name : "Family")}</span>`; };
   const chips = names => (names && names.length ? names : [null]).map(chip).join("");
@@ -752,7 +758,7 @@ function famCtx(data) {
   items.filter(i => (i.type === "activity" || i.type === "early_release") && i.date && i.status !== "done").forEach(i => evs.push({
     title: i.title, all_day: true, kids: i.kids, location: null, day: i.date, src: "item", type: i.type, notes: i.notes, sort: i.date + "|0" }));
   evs.sort((a, b) => a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : 0);
-  return { F, kids, byName, neutral, colorOf, chips, bot, today, items, open, cal, evs };
+  return { F, kids, byName, neutral, colorOf, barOf, chips, bot, today, items, open, cal, evs };
 }
 function fEmpty(ctx, title, what, icon) {
   const who = ctx.bot ? `${esc(ctx.bot)} hasn't added ${what} yet.` : `Nothing has been added yet.`;
@@ -765,7 +771,7 @@ function evRow(e, ctx, nowMs) {
   else { const [t, ap] = hm(e.start); time = `<div class="ev-time num">${esc(t)}<small>${esc(ap)}</small></div>`; }
   const live = !e.all_day && nowMs && new Date(e.start) <= nowMs && new Date(e.end) > nowMs;
   const tag = e.type === "early_release" ? `<span class="tag">Early release</span>` : live ? `<span class="tag">Now</span>` : "";
-  return `<li class="ev ${live ? "now" : ""} ${e.src === "item" ? "item" : ""}" style="--k:${k}">${time}<div style="min-width:0">
+  return `<li class="ev ${live ? "now" : ""} ${e.src === "item" ? "item" : ""}" style="--k:${k};--kbar:${ctx.barOf(e.kids)}">${time}<div style="min-width:0">
     <div class="ev-title">${esc(e.title || "Untitled")}</div>
     <div class="ev-meta">${ctx.chips(e.kids)}${tag}${e.location ? `<span class="loc">${FI.pin}${esc(e.location)}</span>` : ""}${!e.all_day && e.end ? `<span class="num">until ${esc(hm(e.end).join(" ").toLowerCase().replace(" ", ""))}</span>` : ""}</div></div></li>`;
 }
