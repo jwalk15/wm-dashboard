@@ -885,11 +885,13 @@ function upNext(data, ctx) {
   const rows = [], t = ctx.today, tm = addD(t, 1), wkEnd = addD(t, 6);
   const cal = ctx.of("calendar").filter(ctx.live);
   const nToday = cal.filter(a => a.date <= t).length, nTom = cal.filter(a => a.date === tm).length;
-  const bd = cal.find(a => a.kind === "birthday" && a.date <= wkEnd);
+  const bds = cal.filter(a => a.kind === "birthday" && a.date <= wkEnd), bd = bds[0];
+  const wkL = s => fmtD(s, { weekday: "long" });
   const cParts = [];
   if (nToday) cParts.push(`${nToday} ${nToday === 1 ? "event" : "events"} today`);
   if (nTom) cParts.push(`${nTom} tomorrow`);
-  if (bd) cParts.push(`birthday ${bd.date === t ? "today" : bd.date === tm ? "tomorrow" : wk(bd.date)}`);
+  if (bds.length > 1) cParts.push(`${bds.length} birthdays this week`);
+  else if (bd) cParts.push(`birthday ${bd.date === t ? "today" : bd.date === tm ? "tomorrow" : "on " + wkL(bd.date)}`);
   if (cParts.length) rows.push(["calendar", cap1(cParts.join(" · ")), ""]);
   const sch = ctx.of("school").filter(ctx.live);
   const off = sch.find(a => /no\s+school|break/i.test(a.title) && a.date <= t && (a.last || a.date) >= t);
