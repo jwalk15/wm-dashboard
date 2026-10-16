@@ -346,6 +346,56 @@ details.done-list summary::-webkit-details-marker{display:none}
 .budget .bar{height:6px;margin-top:10px}
 .budget .of{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.35}
 .budget .of b{color:var(--ink2);font-weight:600}
+
+/* ---- merged app additions ---- */
+.tabbar{grid-template-columns:repeat(6,1fr);width:min(calc(100% - 16px),560px);padding:5px;height:64px}
+.tabbar .pill{top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/6)}
+.tabbar button{font-size:10.5px;letter-spacing:0;gap:2px;padding:0}
+.tabbar button svg{width:21px;height:21px}
+.ev-note{margin-top:6px;font-size:13px;color:var(--ink2);background:var(--track);border-radius:10px;padding:7px 10px;line-height:1.35}
+.ev .tag.bday{display:inline-flex;align-items:center;gap:4px;color:#B0458A;background:rgba(176,69,138,.11)}
+@media (prefers-color-scheme: dark){.ev .tag.bday{color:#F0A3D2;background:rgba(240,163,210,.13)}}
+.upnext{padding:6px 6px}
+.un{width:100%;display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:12px;border:0;background:none;text-align:left;cursor:pointer;
+  padding:11px 10px;border-radius:16px;color:var(--ink);font-size:15px;font-weight:580;-webkit-tap-highlight-color:transparent;transition:background .2s}
+.un + .un{box-shadow:inset 0 1px 0 var(--line)}
+.un:active{background:var(--accent-soft)}
+.un-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.un-ic svg{width:19px;height:19px}
+.un-tab{display:inline-flex;align-items:center;gap:2px;color:var(--muted);font-size:12.5px;font-weight:600}
+.un.bad .un-t{color:var(--bad)}
+.un.bad .un-ic{background:var(--bad-soft);color:var(--bad)}
+.late{color:var(--bad);font-weight:620}
+.alert.bad{background:var(--bad-soft);color:var(--bad);margin:16px 0 0}
+.pdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--k);margin-right:9px;vertical-align:1px}
+.hitems{list-style:none;margin:0;padding:0}
+.hitems li{padding:14px 0;border-top:1px solid var(--line)}
+.hitems li:first-child{border-top:0;padding-top:2px}
+.hitems li:last-child{padding-bottom:0}
+.hitems .row{align-items:flex-start}
+.hitems .name{font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.hmeta{margin:7px 0 4px}
+.chip.warn{color:var(--amber);background:var(--amber-soft)}
+.hitems .cap{line-height:1.4}
+.dl{margin-top:8px;font-size:13px;color:var(--ink2);display:inline-block;background:var(--track);padding:5px 10px;border-radius:10px}
+.dl span{color:var(--muted)}
+.dl.over{color:var(--bad);background:var(--bad-soft);font-weight:600}
+.dl.over span{color:var(--bad);opacity:.8;font-weight:500}
+.next{margin-top:8px;font-size:13px;color:var(--ink2);line-height:1.4}
+.next b{font-weight:650}
+li.isover{box-shadow:inset 3px 0 0 var(--bad);padding-left:12px!important;margin-left:-4px}
+.helpers ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.helpers li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.helpers .hb{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--track);color:var(--muted)}
+.helpers b{display:block;font-size:14px;font-weight:620}
+.helpers span{font-size:12.5px;color:var(--muted);line-height:1.35}
+.school .fact b a{display:inline-block}
+
+.hchips{display:flex;flex-wrap:wrap;gap:6px}
+.hchips span{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink2);background:var(--track);padding:5px 10px 5px 8px;border-radius:99px}
+.hchips svg{width:13px;height:13px;color:var(--muted)}
+.helpers details ul{margin-top:10px}
+.helpers details li{grid-template-columns:1fr}
 </style>
 </head>
 <body>
@@ -550,7 +600,7 @@ function render(data) {
       <button class="iconbtn" id="lockBtn" aria-label="Lock">${I.lock}Lock</button></div>
       ${data.example ? `<div class="example-bar">Example data <span>· made-up numbers for preview</span></div>` : ""}
     </header>`);
-  out.push(`<div class="hello"><h1>${greeting()}</h1><div class="fresh">${f
+  out.push(`<div class="hello"><h1>Money</h1><div class="fresh">${f
       ? `<span class="dot" style="${f.stale ? "background:var(--amber)" : ""}"></span><span class="num">${esc(f.label)}</span>${f.stale ? `<span class="badge stale">${I.clock}Stale · ${Math.floor(f.ageDays)} days old</span>` : ""}`
       : `<span class="dot" style="background:var(--faint)"></span>No snapshots yet`}</div></div>`);
 
@@ -573,10 +623,7 @@ function render(data) {
   let bills = data.bills && data.bills.items || [];
   if (W && W.week_start && W.week_end) bills = bills.filter(b => !b.due_date || (b.due_date >= W.week_start && b.due_date <= W.week_end));
   out.push(`<section><div class="sh"><h2>This week</h2><span class="meta num">${W ? esc(weekRange(W.week_start, W.week_end)) : ""}</span></div>
-    ${W ? `<div class="grid two">
-      <div class="card"><div class="label"><span class="l">Free household cash left</span></div>
-        <div class="big num ${isNum(W.free_household_cash_week) && W.free_household_cash_week < 0 ? "neg" : ""}">${bigMoney(W.free_household_cash_week)}</div>${isNum(W.free_household_cash_week) ? "" : '<div class="cap">Not recorded in this snapshot</div>'}
-        ${progress(W.spend_to_date, wTarget, isNum(W.weekly_burn_target) ? "weekly target" : "default target")}</div>
+    ${W ? `<div class="grid">
       <div class="card"><div class="label"><span class="l">Spending by category</span></div>
         ${C.week && C.week.items.length ? catRows(C.week.items, { scale: wTarget }) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
     </div>` : `<div class="card">${waiting(true, "Free cash, spending vs the weekly target, bills and odd charges.")}</div>`}
@@ -598,10 +645,7 @@ function render(data) {
   let monthItems = null;
   if (C.month) { const by = {}; C.month.items.forEach(i => by[i.category] = i); monthItems = allowed.map(c => by[c] || { category: c, spent: null, budget: null }); }
   out.push(`<section><div class="sh"><h2>This month</h2><span class="meta">${esc(monthName)}</span></div>
-    ${M ? `<div class="grid two">
-      <div class="card"><div class="label"><span class="l">Free household cash this month</span></div>
-        <div class="big num ${isNum(M.free_household_cash_month) && M.free_household_cash_month < 0 ? "neg" : ""}">${bigMoney(M.free_household_cash_month)}</div>${isNum(M.free_household_cash_month) ? "" : '<div class="cap">Not recorded in this snapshot</div>'}
-        ${progress(M.spend_to_date, mTarget, isNum(M.monthly_burn_target) ? "burn target" : "default target")}</div>
+    ${M ? `<div class="grid">
       <div class="card"><div class="label"><span class="l">Income received</span></div><div class="big num">${bigMoney(M.income_received)}</div>
         <div class="cap">Before the 20% tax skim</div></div>
     </div>` : ""}
@@ -680,29 +724,31 @@ function oddCharges(t) {
   return `<div class="odd" style="margin-top:12px"><div class="ic">${I.eye}</div><div>${parts.length > 1 ? `<ul>${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : esc(t)}</div></div>`;
 }
 
-/* ------------------------------------------------ Family Snapshot: shell + tabs
-   Everything personal (kid names, colors, school, contacts, calendar text) comes from
-   the decrypted data.family -- nothing personal is written in this file. */
+/* ------------------------------------------------ Family app: shell + tabs
+   Everything personal (names, colors, school, calendar text, health items) comes from the
+   decrypted data.family. Each fact has ONE home tab (data.family.agenda[i].home); Today only
+   points at the other tabs, it never repeats their details. */
 const TABS = [
   { id: "today", label: "Today", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg>' },
   { id: "calendar", label: "Calendar", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r=".6" fill="currentColor"/><circle cx="12" cy="14.5" r=".6" fill="currentColor"/></svg>' },
   { id: "school", label: "School", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c0 1.6 2.5 3.3 5.5 3.3s5.5-1.7 5.5-3.3v-4.2"/><path d="M21.5 9.5v5"/></svg>' },
+  { id: "health", label: "Health", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.6 12 20 12 20z"/><path d="M8 12h2.2l1.2-2 1.6 4 1.2-2H16"/></svg>' },
   { id: "money", label: "Money", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3.5"/><path d="M3 10h18"/><path d="M16 14.5h2"/></svg>' },
   { id: "home", label: "Home", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>' },
 ];
+const TI = Object.fromEntries(TABS.map(t => [t.id, t.ic]));
 const FI = {
   pin: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
   phone: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 6.3 6.3l1.4-2.2L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5C10.6 20 4 13.4 3.5 5.6A1.5 1.5 0 0 1 5 4z"/></svg>',
   mail: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>',
   cal: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9.5 15.5l2 2 3.5-4"/></svg>',
-  sun: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18M6 18a6 6 0 0 1 12 0M12 6v2M5.6 9.6L7 11M18.4 9.6L17 11"/></svg>',
   list: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
   user: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
-  bill: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
   flag: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
-  pen: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6L9 21H3v-6z"/></svg>',
-  bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/></svg>',
   school: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/><path d="M21 9v5"/></svg>',
+  cake: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7"/><path d="M5 16c2 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3 1.5 4 0"/><path d="M12 12V8M12 5.5v.01"/></svg>',
+  bot: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="11" rx="3.5"/><path d="M12 4v4M9.5 13h.01M14.5 13h.01M3 13v2M21 13v2"/></svg>',
+  chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 let TAB = "today";
 
@@ -710,10 +756,11 @@ let TAB = "today";
 const dKey = d => { const p = denverParts(d, { year: "numeric", month: "2-digit", day: "2-digit" }); return `${p.year}-${p.month}-${p.day}`; };
 const addD = (s, n) => { const t = ymd(s); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const dayDiff = (a, b) => Math.round((ymd(b) - ymd(a)) / 864e5);
+const wk = s => fmtD(s, { weekday: "short" });
 function dayLabel(s, today) {
   const n = dayDiff(today, s);
-  const nice = fmtD(s, { weekday: "short", month: "short", day: "numeric" });
-  return n === 0 ? ["Today", nice] : n === 1 ? ["Tomorrow", nice] : [fmtD(s, { weekday: "long" }), fmtD(s, { month: "short", day: "numeric" })];
+  return n === 0 ? ["Today", fmtD(s, { weekday: "short", month: "short", day: "numeric" })] : n === 1 ? ["Tomorrow", fmtD(s, { weekday: "short", month: "short", day: "numeric" })]
+    : [fmtD(s, { weekday: "long" }), fmtD(s, { month: "short", day: "numeric" })];
 }
 function relDue(s, today) {
   const n = dayDiff(today, s);
@@ -727,78 +774,79 @@ function hm(iso) {
   return [p.minute === "00" ? p.hour : `${p.hour}:${p.minute}`, (p.dayPeriod || "").toUpperCase()];
 }
 
-/* ---- family data helpers ---- */
+/* ---- context ---- */
 function famCtx(data) {
   const F = data.family || {};
-  const kids = F.kids || [], byName = {};
-  kids.forEach(k => byName[k.name.toLowerCase()] = k);
+  const kids = F.kids || [], people = kids.concat(F.adults || []), byName = {};
+  people.forEach(k => byName[k.name.toLowerCase()] = k);
   const neutral = F.family_color || "var(--c3)";
+  const colorOf = names => (names && names.length && byName[names[0].toLowerCase()]) ? byName[names[0].toLowerCase()].color : neutral;
   const barOf = names => {
     const cs = (names || []).map(n => byName[n.toLowerCase()]).filter(Boolean).map(k => k.color);
     if (cs.length < 2) return cs[0] || neutral;
     const step = 100 / cs.length;
     return `linear-gradient(to bottom, ${cs.map((c, i) => `${c} ${(i * step).toFixed(1)}% ${((i + 1) * step).toFixed(1)}%`).join(", ")})`;
   };
-  const colorOf = names => (names && names.length && byName[names[0].toLowerCase()]) ? byName[names[0].toLowerCase()].color : neutral;
-  const chip = (name) => { const k = byName[(name || "").toLowerCase()]; return `<span class="kidchip" style="--k:${k ? k.color : neutral}">${esc(k ? k.name : "Family")}</span>`; };
+  const chip = name => { const k = byName[(name || "").toLowerCase()]; return `<span class="kidchip" style="--k:${k ? k.color : neutral}">${esc(k ? k.name : "Family")}</span>`; };
   const chips = names => (names && names.length ? names : [null]).map(chip).join("");
-  const bot = (F.labels && F.labels.bot) || "";
-  const today = dKey(new Date());
-  const items = F.items || [];
-  const open = items.filter(i => i.status !== "done");
-  const cal = F.calendar;
-  // Calendar events + dated family activities / early releases, as one agenda.
-  const evs = [];
-  ((cal && cal.events) || []).forEach(e => {
-    if (e.all_day) {
-      const last = addD(e.end || e.start, -1);
-      for (let d = e.start; d <= last; d = addD(d, 1)) evs.push({ ...e, day: d, sort: d + "|0", src: "cal" });
-    } else { const day = dKey(new Date(e.start)); evs.push({ ...e, day, sort: day + "|1" + String(new Date(e.start).getTime()).padStart(15, "0"), src: "cal" }); }
-  });
-  items.filter(i => (i.type === "activity" || i.type === "early_release") && i.date && i.status !== "done").forEach(i => evs.push({
-    title: i.title, all_day: true, kids: i.kids, location: null, day: i.date, src: "item", type: i.type, notes: i.notes, sort: i.date + "|0" }));
-  evs.sort((a, b) => a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : 0);
-  return { F, kids, byName, neutral, colorOf, barOf, chips, bot, today, items, open, cal, evs };
+  const now = new Date(), today = dKey(now);
+  const agenda = F.agenda || [];
+  const live = a => a.status !== "done" && (!a.date || (a.last || a.date) >= today) && !(a.end && !a.all_day && new Date(a.end) <= now);
+  const of = home => agenda.filter(a => a.home === home);
+  return { F, kids, byName, neutral, colorOf, barOf, chips, bot: (F.labels && F.labels.bot) || "", today, now, agenda, live, of, days: F.days || 14 };
 }
 function fEmpty(ctx, title, what, icon) {
   const who = ctx.bot ? `${esc(ctx.bot)} hasn't added ${what} yet.` : `Nothing has been added yet.`;
   return `<div class="fempty"><div class="wi">${icon || I.sprout}</div><div><b>${esc(title)}</b>${who}</div></div>`;
 }
-function evRow(e, ctx, nowMs) {
-  const k = ctx.colorOf(e.kids);
+
+/* ---- agenda rows ---- */
+function evRow(e, ctx) {
   let time;
-  if (e.all_day) time = `<div class="ev-time allday">${e.type === "early_release" ? "Early" : "All day"}</div>`;
+  if (e.all_day) time = `<div class="ev-time allday">${e.kind === "birthday" ? "B-day" : e.kind === "early_release" ? "Early" : e.kind === "deadline" ? "Due" : "All day"}</div>`;
   else { const [t, ap] = hm(e.start); time = `<div class="ev-time num">${esc(t)}<small>${esc(ap)}</small></div>`; }
-  const live = !e.all_day && nowMs && new Date(e.start) <= nowMs && new Date(e.end) > nowMs;
-  const tag = e.type === "early_release" ? `<span class="tag">Early release</span>` : live ? `<span class="tag">Now</span>` : "";
-  return `<li class="ev ${live ? "now" : ""} ${e.src === "item" ? "item" : ""}" style="--k:${k};--kbar:${ctx.barOf(e.kids)}">${time}<div style="min-width:0">
-    <div class="ev-title">${esc(e.title || "Untitled")}</div>
-    <div class="ev-meta">${ctx.chips(e.kids)}${tag}${e.location ? `<span class="loc">${FI.pin}${esc(e.location)}</span>` : ""}${!e.all_day && e.end ? `<span class="num">until ${esc(hm(e.end).join(" ").toLowerCase().replace(" ", ""))}</span>` : ""}</div></div></li>`;
+  const nowLive = !e.all_day && e.start && new Date(e.start) <= ctx.now && new Date(e.end) > ctx.now;
+  const ongoing = e.last && e.date < ctx.today && e.last >= ctx.today;
+  const tags = [];
+  if (e.kind === "birthday") tags.push(`<span class="tag bday">${FI.cake}${e.turns ? "Turns " + e.turns : "Birthday"}</span>`);
+  if (e.kind === "early_release") tags.push(`<span class="tag">Early release</span>`);
+  if (nowLive) tags.push(`<span class="tag">Now</span>`);
+  if (e.last) tags.push(`<span class="num">${ongoing ? "through" : "until"} ${esc(fmtD(e.last, { weekday: "short", month: "short", day: "numeric" }))}</span>`);
+  const until = !e.all_day && e.end ? `<span class="num">until ${esc(hm(e.end).join("").toLowerCase())}</span>` : "";
+  const tt = e.time_text ? `<span class="num">${esc(e.time_text)}</span>` : "";
+  const kidsHtml = e.kind === "birthday" ? "" : ctx.chips(e.kids);
+  return `<li class="ev ${nowLive ? "now" : ""}" style="--k:${ctx.colorOf(e.kids)};--kbar:${ctx.barOf(e.kids)}">${time}<div style="min-width:0">
+    <div class="ev-title">${esc(e.title)}</div>
+    <div class="ev-meta">${kidsHtml}${tags.join("")}${e.location ? `<span class="loc">${FI.pin}${esc(e.location)}</span>` : ""}${until}${tt}</div>
+    ${(e.notes || []).map(n => `<div class="ev-note">${esc(n)}</div>`).join("")}</div></li>`;
 }
-function agenda(list, ctx, nowMs) {
+function agendaList(list, ctx) {
   const days = [];
-  list.forEach(e => { let d = days[days.length - 1]; if (!d || d.day !== e.day) days.push(d = { day: e.day, evs: [] }); d.evs.push(e); });
+  list.forEach(e => { const d0 = e.date < ctx.today ? ctx.today : e.date; let d = days[days.length - 1]; if (!d || d.day !== d0) days.push(d = { day: d0, evs: [] }); d.evs.push(e); });
   return days.map(d => { const [a, b] = dayLabel(d.day, ctx.today);
     return `<div class="day"><div class="dayh ${d.day === ctx.today ? "today" : ""}"><b>${esc(a)}</b><span class="num">${esc(b)}</span></div>
-      <ul class="evs">${d.evs.map(e => evRow(e, ctx, nowMs)).join("")}</ul></div>`; }).join("");
+      <ul class="evs">${d.evs.map(e => evRow(e, ctx)).join("")}</ul></div>`; }).join("");
 }
-function itemRow(i, ctx) {
+const byWhen = (a, b) => ((a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.all_day === b.all_day ? 0 : a.all_day ? -1 : 1) || ((a.start || "") < (b.start || "") ? -1 : 1));
+function dueRow(i, ctx) {
   const key = i.due || i.date, k = ctx.colorOf(i.kids);
-  const [rel, cls] = i.due ? relDue(i.due, ctx.today) : ["", ""];
+  const [rel, cls] = key ? relDue(key, ctx.today) : ["", ""];
   const cal = key ? `<div class="cal k" style="--k:${k}"><small>${esc(fmtD(key, { month: "short" }))}</small><b class="num">${ymd(key).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`;
-  return `<li class="${i.status === "done" ? "isdone" : ""}">${cal}<div style="min-width:0"><div class="t">${esc(i.title)}</div>
-    <div class="s">${ctx.chips(i.kids)}${rel && i.status !== "done" ? `<span class="${cls}">${esc(rel)}</span>` : ""}${i.status === "done" ? "<span>Done</span>" : ""}</div>
-    ${i.notes ? `<div class="cap" style="margin-top:4px">${esc(i.notes)}</div>` : ""}</div><span></span></li>`;
+  return `<li>${cal}<div style="min-width:0"><div class="t">${esc(i.title)}</div>
+    <div class="s">${ctx.chips(i.kids)}${rel ? `<span class="${cls}">${esc(rel)}</span>` : ""}</div>
+    ${(i.notes || []).map(n => `<div class="cap" style="margin-top:4px">${esc(n)}</div>`).join("")}</div><span></span></li>`;
 }
-function billsBetween(data, a, b) {
-  return ((data.bills && data.bills.items) || []).filter(x => x.due_date && x.due_date >= a && x.due_date <= b)
-    .sort((x, y) => x.due_date < y.due_date ? -1 : 1);
+function laterRow(i, ctx) {
+  const k = ctx.colorOf(i.kids);
+  return `<li><div class="cal k" style="--k:${k}"><small>${esc(fmtD(i.date, { month: "short" }))}</small><b class="num">${ymd(i.date).getUTCDate()}</b></div><div style="min-width:0"><div class="t">${esc(i.title)}</div>
+    <div class="s">${ctx.chips(i.kids)}<span>${esc(wk(i.date) + (i.date.slice(0, 4) !== ctx.today.slice(0, 4) ? ", " + i.date.slice(0, 4) : ""))}${i.start ? " · " + esc(hm(i.start).join("").toLowerCase()) : ""}</span></div>
+    ${(i.notes || []).map(n => `<div class="cap" style="margin-top:4px">${esc(n)}</div>`).join("")}</div><span></span></li>`;
 }
-function billList(bills) {
-  return `<ul class="rows">${bills.map(b => `<li><div class="bill">
-    <div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${ymd(b.due_date).getUTCDate()}</b></div>
-    ${billText(b)}
-    <div class="right"><span class="amt num">${money(b.amount)}</span>${b.status ? `<span class="chip ${b.status === "GREEN" ? "good" : "bad"}">${b.status}</span>` : ""}</div></div></li>`).join("")}</ul>`;
+function contactRows(list) {
+  const initials = n => n.replace(/^(mrs?|ms|dr)\.?\s+/i, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+  return `<ul class="rows">${list.map(c => `<li><div class="contact"><div class="avatar">${esc(initials(c.name))}</div>
+    <div style="min-width:0"><div class="name" style="font-weight:600">${esc(c.name)}</div><div class="cap">${esc([c.role, c.phone].filter(Boolean).join(" · "))}</div>${c.notes ? `<div class="cap" style="color:var(--faint)">${esc(c.notes)}</div>` : ""}</div>
+    <div class="acts">${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}" aria-label="Call">${FI.phone}</a>` : ""}${c.email ? `<a href="mailto:${esc(c.email)}" aria-label="Email">${FI.mail}</a>` : ""}</div></div></li>`).join("")}</ul>`;
 }
 
 /* ---- "left to spend" card (Today) ---- */
@@ -831,86 +879,136 @@ function budgetCard(data, ctx) {
     <div class="card budget">${budgetHalf("week", W, data, ctx)}${budgetHalf("month", M, data, ctx)}</div></section>`;
 }
 
-/* ---- views ---- */
+
+/* ---- Today: budget + pointers ---- */
+function upNext(data, ctx) {
+  const rows = [], t = ctx.today, tm = addD(t, 1), wkEnd = addD(t, 6);
+  const cal = ctx.of("calendar").filter(ctx.live);
+  const nToday = cal.filter(a => a.date <= t).length, nTom = cal.filter(a => a.date === tm).length;
+  const bd = cal.find(a => a.kind === "birthday" && a.date <= wkEnd);
+  const cParts = [];
+  if (nToday) cParts.push(`${nToday} ${nToday === 1 ? "event" : "events"} today`);
+  if (nTom) cParts.push(`${nTom} tomorrow`);
+  if (bd) cParts.push(`birthday ${bd.date === t ? "today" : bd.date === tm ? "tomorrow" : wk(bd.date)}`);
+  if (cParts.length) rows.push(["calendar", cap1(cParts.join(" · ")), ""]);
+  const sch = ctx.of("school").filter(ctx.live);
+  const off = sch.find(a => /no\s+school|break/i.test(a.title) && a.date <= t && (a.last || a.date) >= t);
+  if (off) rows.push(["school", "School's out today", ""]);
+  const er = sch.find(a => a.kind === "early_release" && a.date >= t && a.date <= wkEnd);
+  if (er) rows.push(["school", `Early release ${er.date === t ? "today" : er.date === tm ? "tomorrow" : wk(er.date)}`, ""]);
+  const dl = sch.filter(a => a.kind === "deadline" && (a.due || a.date) <= wkEnd);
+  const late = dl.filter(a => (a.due || a.date) < t).length;
+  if (dl.length) rows.push(["school", `${dl.length} school ${dl.length === 1 ? "deadline" : "deadlines"} this week${late ? ` · ${late} overdue` : ""}`, late ? "bad" : ""]);
+  const H = ctx.F.health;
+  if (H) {
+    const zs = (H.name || "").split(" ")[0];
+    const dls = H.items.filter(i => i.deadline).map(i => i.deadline).concat(H.deadlines || []);
+    const od = dls.filter(d => d.due < t).length;
+    if (od) rows.push(["health", `${od} ${zs} ${od === 1 ? "deadline" : "deadlines"} overdue`, "bad"]);
+    const soon = dls.filter(d => d.due >= t && dayDiff(t, d.due) <= 30).sort((a, b) => a.due < b.due ? -1 : 1)[0];
+    if (soon) rows.push(["health", `${zs} upload due in ${dayDiff(t, soon.due)} days`, ""]);
+    else if (!od && H.items.length) rows.push(["health", `${H.items.length} open ${zs} ${H.items.length === 1 ? "item" : "items"}`, ""]);
+  }
+  const bills = ((data.bills && data.bills.items) || []).filter(b => b.due_date && b.due_date >= t && b.due_date <= addD(t, 2));
+  if (bills.length) rows.push(["money", `${bills.length} ${bills.length === 1 ? "bill" : "bills"} due by ${wk(addD(t, 2))}`, ""]);
+  const todos = ctx.of("home").filter(a => a.kind === "todo" && a.status !== "done");
+  if (todos.length) rows.push(["home", `${todos.length} open ${todos.length === 1 ? "to-do" : "to-dos"}`, ""]);
+  return `<section><div class="sh"><h2>Up next</h2></div>
+    ${rows.length ? `<div class="card upnext">${rows.map(([tab, txt, cls]) => `<button class="un ${cls}" data-go="${tab}"><span class="un-ic">${TI[tab]}</span><span class="un-t">${esc(txt)}</span><span class="un-tab">${esc(TABS.find(x => x.id === tab).label)}${FI.chev}</span></button>`).join("")}</div>`
+      : `<div class="allclear">${I.check}<div>All clear<span>Nothing coming up that needs you.</span></div></div>`}</section>`;
+}
 function viewToday(data, ctx) {
-  const now = new Date(), nowMs = now.getTime(), until = nowMs + 48 * 3600e3;
-  const end48 = dKey(new Date(until));
-  const next = ctx.evs.filter(e => e.all_day ? (e.day >= ctx.today && e.day <= end48) : (new Date(e.end || e.start) > now && new Date(e.start) < until));
-  const due = ctx.open.filter(i => ["form", "deadline", "todo"].includes(i.type) && (i.due || (i.type !== "todo" && i.date)) && (i.due || i.date) <= addD(ctx.today, 2))
-    .sort((a, b) => ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
-  const bills = billsBetween(data, ctx.today, addD(ctx.today, 2));
-  const er = ctx.open.find(i => i.type === "early_release" && (i.date === ctx.today || i.date === addD(ctx.today, 1)));
-  const p = denverParts(now, { weekday: "long", month: "long", day: "numeric" });
-  const out = [];
-  out.push(`<div class="fhead"><h1>${greeting()}</h1><div class="sub"><span class="dot"></span><span>${esc(p.weekday)}, ${esc(p.month)} ${esc(p.day)}</span></div>
-    ${er ? `<div class="alert">${FI.bell}<div>Early release ${er.date === ctx.today ? "today" : "tomorrow"}<span>${esc(er.title)}${ctx.F.school && ctx.F.school.early_release ? " · pickup " + esc(ctx.F.school.early_release) : ""}</span></div></div>` : ""}</div>`);
-  out.push(budgetCard(data, ctx));
-  out.push(`<section><div class="sh"><h2>Next 48 hours</h2><span class="meta">${next.length ? next.length + (next.length === 1 ? " thing" : " things") : ""}</span></div>
-    ${next.length ? agenda(next, ctx, nowMs)
-      : !ctx.cal ? fEmpty(ctx, "Calendar not connected yet", "the calendar", FI.cal.replace(/30/g, "20"))
-      : `<div class="card fhero"><div class="art">${FI.sun}</div><h3>Wide open</h3><p>Nothing on the family calendar for the next two days.</p></div>`}</section>`);
-  out.push(`<section><div class="sh"><h2>Due soon</h2><span class="meta">Next 48 hours</span></div>
-    ${due.length || bills.length ? `<div class="grid">
-      ${due.length ? `<div class="card"><div class="label"><span class="l">Forms, deadlines &amp; to-dos</span></div><ul class="items" style="margin-top:12px">${due.map(i => itemRow(i, ctx)).join("")}</ul></div>` : ""}
-      ${bills.length ? `<div class="card"><div class="label"><span class="l">Bills</span></div><div style="margin-top:12px">${billList(bills)}</div></div>` : ""}</div>`
-    : `<div class="allclear">${I.check}<div>All clear<span>No forms, deadlines, to-dos or bills due in the next two days.</span></div></div>`}</section>`);
-  return out.join("");
+  const p = denverParts(ctx.now, { weekday: "long", month: "long", day: "numeric" });
+  return `<div class="fhead"><h1>${greeting()}</h1><div class="sub"><span class="dot"></span><span>${esc(p.weekday)}, ${esc(p.month)} ${esc(p.day)}</span></div></div>`
+    + budgetCard(data, ctx) + upNext(data, ctx);
 }
+
+/* ---- Calendar ---- */
 function viewCalendar(data, ctx) {
-  const now = new Date(), end = addD(ctx.today, ((ctx.cal && ctx.cal.days) || 14) - 1);
-  const list = ctx.evs.filter(e => e.day >= ctx.today && e.day <= end && (e.all_day || new Date(e.end || e.start) > now));
+  const end = addD(ctx.today, ctx.days - 1);
+  const all = ctx.of("calendar").filter(ctx.live).sort(byWhen);
+  const list = all.filter(e => e.date <= end);
+  const later = all.filter(e => e.date > end && e.kind !== "birthday");
+  const cals = (ctx.F.calendars || []).filter(c => c.name);
   const out = [];
-  out.push(`<div class="fhead"><h1>Next two weeks</h1><div class="sub num">${esc(dayShort(ctx.today))} – ${esc(dayShort(end))}${ctx.cal && ctx.cal.name ? ` · ${esc(ctx.cal.name)} calendar` : ""}</div>
+  out.push(`<div class="fhead"><h1>Next two weeks</h1><div class="sub num">${esc(dayShort(ctx.today))} – ${esc(dayShort(end))}${cals.length ? ` · ${esc(cals.map(c => c.name).join(" + "))} calendars` : ""}</div>
     ${ctx.kids.length ? `<div class="legendkids">${ctx.kids.map(k => `<span class="kidchip" style="--k:${k.color}">${esc(k.name)}</span>`).join("")}<span class="kidchip" style="--k:${ctx.neutral}">Family</span></div>` : ""}</div>`);
-  out.push(`<section style="margin-top:22px">${list.length ? agenda(list, ctx, now.getTime())
-    : !ctx.cal ? fEmpty(ctx, "Calendar not connected yet", "the calendar")
-    : `<div class="card fhero"><div class="art">${FI.cal}</div><h3>A quiet two weeks</h3><p>Nothing is on the family calendar between now and ${esc(dayShort(end))}. New events show up after the next update.</p></div>`}</section>`);
+  out.push(`<section style="margin-top:22px">${list.length ? agendaList(list, ctx)
+    : `<div class="card fhero"><div class="art">${FI.cal}</div><h3>A quiet two weeks</h3><p>Nothing on the calendars between now and ${esc(dayShort(end))}.</p></div>`}</section>`);
+  if (later.length) out.push(`<section><div class="sh"><h2>Later</h2><span class="meta">${later.length} planned</span></div>
+    <div class="card"><ul class="items">${later.map(e => laterRow(e, ctx)).join("")}</ul></div></section>`);
   return out.join("");
 }
+
+/* ---- School ---- */
 function viewSchool(data, ctx) {
   const S = ctx.F.school, out = [];
   const students = ctx.kids.filter(k => k.school);
+  const sch = ctx.of("school").filter(ctx.live).sort(byWhen);
+  const dls = sch.filter(a => a.kind === "deadline").sort((a, b) => ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
+  const dates = sch.filter(a => a.kind !== "deadline");
+  const late = dls.filter(a => (a.due || a.date) < ctx.today).length;
   out.push(`<div class="fhead"><h1>School</h1><div class="sub">${students.length ? `${students.length} students` : ""}</div></div>`);
+  const fact = (k, v) => v ? `<div class="fact"><span>${k}</span><b>${v}</b></div>` : "";
+  const tel = p => `<a href="tel:${esc(p.replace(/[^\d+]/g, ""))}">${esc(p)}</a>`, mail = m => `<a href="mailto:${esc(m)}">${esc(m)}</a>`;
   out.push(`<section style="margin-top:18px">${S ? `<div class="card school"><div class="sch-top"><div class="sch-ic">${FI.school}</div><div><h3>${esc(S.name)}</h3><div class="city">${esc(S.city || "")}</div></div></div>
-      <div class="facts"><div class="fact"><span>School hours</span><b class="num">${esc(S.hours || "—")}</b></div>
-      <div class="fact"><span>Early release</span><b class="num">${esc(S.early_release || "—")}</b></div>
-      <div class="fact"><span>PTO</span><b>${S.pto_email ? `<a href="mailto:${esc(S.pto_email)}">${esc(S.pto_email)}</a>` : "—"}</b></div></div>
+      <div class="facts">${fact("School hours", esc(S.hours || "—"))}${fact("Early release", esc(S.early_release || "—"))}
+      ${fact("Address", S.address ? esc(S.address) : "")}
+      ${fact("Office", [S.phone && tel(S.phone), S.office_email && mail(S.office_email)].filter(Boolean).join("<br>"))}
+      ${fact("PTO", [S.pto_email && mail(S.pto_email), S.pto_phone && tel(S.pto_phone)].filter(Boolean).join("<br>"))}</div>
       ${students.length ? `<div class="kids">${students.map(k => `<span class="kidchip" style="--k:${k.color}">${esc(k.name)} <small>· ${esc(k.detail || "")}</small></span>`).join("")}</div>` : ""}</div>`
-    : fEmpty(ctx, "School details", "school details")}</section>`);
-  const upcoming = (t) => ctx.items.filter(i => i.type === t && (i.status !== "done") && (t !== "early_release" || !i.date || i.date >= ctx.today));
-  const block = (title, t, what, icon) => { const L = upcoming(t);
-    return `<section><div class="sh"><h2>${title}</h2><span class="meta">${L.length ? L.length + " open" : ""}</span></div>
-      ${L.length ? `<div class="card"><ul class="items">${L.map(i => itemRow(i, ctx)).join("")}</ul></div>` : fEmpty(ctx, `No ${title.toLowerCase()} yet`, what, icon)}</section>`; };
-  out.push(block("Early release days", "early_release", "any early-release days", FI.bell));
-  out.push(block("Forms", "form", "any forms", FI.pen));
-  out.push(block("Deadlines", "deadline", "any deadlines", FI.flag));
+    : ""}</section>`);
+  out.push(`<section><div class="sh"><h2>Forms &amp; deadlines</h2><span class="meta">${dls.length ? `${dls.length} open${late ? ` · <span class="late">${late} overdue</span>` : ""}` : ""}</span></div>
+    ${dls.length ? `<div class="card"><ul class="items">${dls.map(i => dueRow(i, ctx)).join("")}</ul></div>` : fEmpty(ctx, "No forms or deadlines", "any forms or deadlines", FI.flag)}</section>`);
+  out.push(`<section><div class="sh"><h2>School dates</h2><span class="meta">${dates.length ? dates.length + " coming up" : ""}</span></div>
+    ${dates.length ? agendaList(dates, ctx) : fEmpty(ctx, "No school dates yet", "any school dates", FI.cal.replace(/30/g, "20"))}</section>`);
+  if ((ctx.F.contacts_school || []).length) out.push(`<section><div class="sh"><h2>Teachers</h2></div><div class="card">${contactRows(ctx.F.contacts_school)}</div></section>`);
   return out.join("");
 }
+
+/* ---- Health ---- */
+function viewHealth(data, ctx) {
+  const H = ctx.F.health, out = [];
+  out.push(`<div class="fhead"><h1>Health</h1><div class="sub">${H ? `${esc(H.name)} · ${H.items.length} open ${H.items.length === 1 ? "item" : "items"}` : ""}</div></div>`);
+  if (!H) return out.join("") + `<section style="margin-top:22px">${fEmpty({ bot: "" }, "Health tracker not connected", "")}</section>`;
+  const lvl = { high: ["High priority", "bad"], unconfirmed: ["Unconfirmed", "warn"], open: ["Open", "warn"], unknown: ["Unknown", "ns"] };
+  const dlLine = d => { const over = d.due < ctx.today;
+    return `<div class="dl ${over ? "over" : ""}">${over ? "Overdue" : "Upload by"} · <b class="num">${esc(longDate(d.due))}</b><span> · service ${esc(longDate(d.dos))}</span></div>`; };
+  const people = [];
+  H.items.forEach(i => { let p = people.find(x => x.who === i.who); if (!p) people.push(p = { who: i.who, items: [] }); p.items.push(i); });
+  const od = H.items.filter(i => i.deadline && i.deadline.due < ctx.today).length + (H.deadlines || []).filter(d => d.due < ctx.today).length;
+  if (od) out.push(`<div class="alert bad">${FI.flag}<div>${od} upload ${od === 1 ? "deadline has" : "deadlines have"} passed<span>Still open, marked in red below</span></div></div>`);
+  out.push(people.map(p => { const k = ctx.byName[p.who.toLowerCase()]; const tot = p.items.reduce((s, i) => s + (isNum(i.amount) ? i.amount : 0), 0);
+    return `<section><div class="sh"><h2><span class="pdot" style="--k:${k ? k.color : ctx.neutral}"></span>${esc(p.who)}</h2><span class="meta num">${money(tot)}</span></div>
+      <div class="card"><ul class="hitems">${p.items.map(i => { const [lt, lc] = lvl[i.level] || lvl.unknown; const over = i.deadline && i.deadline.due < ctx.today;
+        return `<li class="${over ? "isover" : ""}"><div class="row"><span class="name">${esc(i.item)}</span><span class="val num">${money(i.amount)}</span></div>
+          <div class="hmeta"><span class="chip ${lc === "bad" || over ? "bad" : lc === "warn" ? "warn" : "ns"}">${esc(over ? "Overdue · " + lt : lt)}</span></div>
+          ${i.status && !/^status\s+unknown$/i.test(i.status.trim()) ? `<div class="cap">${esc(i.status)}</div>` : ""}${i.deadline ? dlLine(i.deadline) : ""}
+          ${i.next ? `<div class="next"><b>Next:</b> ${esc(i.next)}</div>` : ""}</li>`; }).join("")}</ul></div></section>`; }).join(""));
+  if ((H.deadlines || []).length) out.push(`<section><div class="sh"><h2>Other upload deadlines</h2><span class="meta">Service date + 6 months</span></div>
+    <div class="card"><ul class="hitems">${H.deadlines.map(d => `<li class="${d.due < ctx.today ? "isover" : ""}"><div class="row"><span class="name">${esc(d.who)} · ${esc(d.what)}</span></div>${dlLine(d)}${d.status ? `<div class="cap">${esc(d.status)}</div>` : ""}</li>`).join("")}</ul></div></section>`);
+  return out.join("");
+}
+
+/* ---- Home ---- */
 function viewHome(data, ctx) {
   const out = [];
-  const todos = ctx.items.filter(i => i.type === "todo");
+  const todos = ctx.of("home").filter(a => a.kind === "todo");
   const openT = todos.filter(i => i.status !== "done"), doneT = todos.filter(i => i.status === "done");
-  const bills = billsBetween(data, ctx.today, addD(ctx.today, 7));
-  const contacts = ctx.F.contacts || [];
-  out.push(`<div class="fhead"><h1>Home</h1><div class="sub">To-dos, bills and people we call</div></div>`);
+  const contacts = ctx.F.contacts_home || [], helpers = ctx.F.helpers || [];
+  out.push(`<div class="fhead"><h1>Home</h1><div class="sub">To-dos, people and helpers</div></div>`);
   const todoRow = i => { const [rel, cls] = i.due ? relDue(i.due, ctx.today) : ["", ""];
     return `<li class="${i.status === "done" ? "isdone" : ""}"><span class="tick ${i.status === "done" ? "done" : ""}">${i.status === "done" ? I.check.replace(/18/g, "13") : ""}</span>
       <div style="min-width:0"><div class="t">${esc(i.title)}</div><div class="s">${i.kids && i.kids.length ? ctx.chips(i.kids) : ""}${rel && i.status !== "done" ? `<span class="${cls}">${esc(rel)}</span>` : ""}</div>
-      ${i.notes ? `<div class="cap" style="margin-top:3px">${esc(i.notes)}</div>` : ""}</div><span></span></li>`; };
+      ${(i.notes || []).map(n => `<div class="cap" style="margin-top:3px">${esc(n)}</div>`).join("")}</div><span></span></li>`; };
   out.push(`<section style="margin-top:22px"><div class="sh"><h2>To-dos</h2><span class="meta">${openT.length ? openT.length + " open" : ""}</span></div>
     ${todos.length ? `<div class="card">${openT.length ? `<ul class="items todos">${openT.map(todoRow).join("")}</ul>` : `<div class="allclear" style="background:none;padding:0">${I.check}<div>Everything's done</div></div>`}
       ${doneT.length ? `<details class="done-list"><summary>${doneT.length} done ›</summary><ul class="items todos" style="margin-top:8px">${doneT.map(todoRow).join("")}</ul></details>` : ""}</div>`
     : fEmpty(ctx, "No to-dos yet", "any to-dos", FI.list)}</section>`);
-  out.push(`<section><div class="sh"><h2>Bills due soon</h2><span class="meta">Next 7 days</span></div>
-    ${!data.bills ? fEmpty({ bot: "" }, "No bills recorded yet", "", FI.bill).replace("Nothing has been added yet.", "Bills appear after CFO's next snapshot.")
-      : bills.length ? `<div class="card">${billList(bills)}</div>`
-      : `<div class="allclear">${I.check}<div>Nothing due soon<span>No bills with a due date in the next 7 days.</span></div></div>`}</section>`);
-  const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
-  out.push(`<section><div class="sh"><h2>Key contacts</h2></div>
-    ${contacts.length ? `<div class="card"><ul class="rows">${contacts.map(c => `<li><div class="contact"><div class="avatar">${esc(initials(c.name))}</div>
-      <div style="min-width:0"><div class="name" style="font-weight:600">${esc(c.name)}</div><div class="cap">${esc([c.role, c.phone].filter(Boolean).join(" · "))}</div>${c.notes ? `<div class="cap" style="color:var(--faint)">${esc(c.notes)}</div>` : ""}</div>
-      <div class="acts">${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}" aria-label="Call">${FI.phone}</a>` : ""}${c.email ? `<a href="mailto:${esc(c.email)}" aria-label="Email">${FI.mail}</a>` : ""}</div></div></li>`).join("")}</ul></div>`
-      : fEmpty(ctx, "No contacts yet", "any contacts", FI.user)}</section>`);
+  out.push(`<section><div class="sh"><h2>Contacts</h2></div>${contacts.length ? `<div class="card">${contactRows(contacts)}</div>` : fEmpty(ctx, "No contacts yet", "any contacts", FI.user)}</section>`);
+  if (helpers.length) out.push(`<section><div class="sh"><h2>Helpers</h2><span class="meta">${helpers.length} bots</span></div>
+    <div class="card helpers"><div class="hchips">${helpers.map(h => `<span>${FI.bot}${esc(h.name)}</span>`).join("")}</div>
+      <details class="done-list"><summary>What each one does ›</summary><ul>${helpers.map(h => `<li><div><b>${esc(h.name)}</b><span>${esc(h.does)}</span></div></li>`).join("")}</ul></details></div></section>`);
   return out.join("");
 }
 
@@ -919,14 +1017,13 @@ function renderShell(data, topbar, moneyHTML) {
   const h = location.hash.slice(1);
   if (TABS.some(t => t.id === h)) TAB = h;
   const idx = TABS.findIndex(t => t.id === TAB);
-  const views = {
-    today: viewToday(data, ctx), calendar: viewCalendar(data, ctx), school: viewSchool(data, ctx),
-    money: moneyHTML, home: viewHome(data, ctx),
-  };
-  const lateDue = ctx.open.some(i => ["form", "deadline", "todo"].includes(i.type) && i.due && i.due < ctx.today);
+  const views = { today: viewToday(data, ctx), calendar: viewCalendar(data, ctx), school: viewSchool(data, ctx),
+    health: viewHealth(data, ctx), money: moneyHTML, home: viewHome(data, ctx) };
   document.body.classList.add("has-tabs");
+  const H = ctx.F.health;
+  const healthDot = H && (H.items.some(i => i.deadline && i.deadline.due < ctx.today) || (H.deadlines || []).some(d => d.due < ctx.today));
   return topbar + TABS.map(t => `<div class="view ${t.id === TAB ? "on" : ""}" id="view-${t.id}" role="tabpanel" aria-label="${t.label}">${views[t.id]}${t.id !== "money" ? `<footer>Private · end-to-end encrypted · times in Mountain Time</footer>` : ""}</div>`).join("")
-    + `<nav class="tabbar" role="tablist" style="--i:${idx}"><span class="pill"></span>${TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === TAB}">${t.ic}<span>${t.label}</span>${t.id === "today" && lateDue ? '<i class="tdot"></i>' : ""}</button>`).join("")}</nav>`;
+    + `<nav class="tabbar" role="tablist" style="--i:${idx}"><span class="pill"></span>${TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === TAB}">${t.ic}<span>${t.label}</span>${t.id === "health" && healthDot ? '<i class="tdot"></i>' : ""}</button>`).join("")}</nav>`;
 }
 const scrollPos = {};
 function showTab(id, push) {
@@ -947,6 +1044,7 @@ function showTab(id, push) {
 }
 function wireTabs() {
   document.querySelectorAll(".tabbar button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab, true)));
+  document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { showTab(b.dataset.go, true); window.scrollTo(0, 0); }));
   window.onhashchange = () => { const h = location.hash.slice(1); if (TABS.some(t => t.id === h)) showTab(h, false); };
 }
 
