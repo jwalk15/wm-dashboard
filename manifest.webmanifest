@@ -1,7 +1,7 @@
 {
-  "name": "Walker Money",
-  "short_name": "Walker Money",
-  "description": "Private family money dashboard",
+  "name": "Walker HQ",
+  "short_name": "Walker HQ",
+  "description": "Private family dashboard",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
