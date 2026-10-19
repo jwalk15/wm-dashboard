@@ -460,6 +460,15 @@ body.ds-open{overflow:hidden}
 .ds-notes p{margin:0;padding:8px 0;font-size:15px;line-height:1.5;color:var(--ink2);overflow-wrap:anywhere;border-top:1px solid var(--line)}
 .ds-notes p:first-of-type{border-top:0;padding-top:2px}
 .ds-src{margin-top:20px;font-size:12.5px;color:var(--faint)}
+.ds-about{margin-top:16px}
+.ds-about p{margin:0;font-size:15.5px;line-height:1.55;color:var(--ink)}
+.ds-link{display:inline-flex;align-items:center;gap:2px;margin-top:12px;min-height:40px;padding:0 14px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:14.5px;text-decoration:none}
+.ds-none{margin:14px 0 0;font-size:14px;color:var(--muted)}
+.cmail{color:var(--accent);text-decoration:none;overflow-wrap:anywhere}
+.school .facts a{color:var(--accent);text-decoration:none}
+.school .fact{align-items:flex-start}
+.school .fact span{flex:none}
+.school .fact b{text-align:right;min-width:0;overflow-wrap:anywhere;line-height:1.45;font-size:14px}
 </style>
 </head>
 <body>
@@ -920,12 +929,19 @@ function detailHTML(e, ctx) {
   const src = (e.sources || []).map(s => s === "eagle" ? (ctx.bot || "Family notes") : SRC_LABEL[s] || s.replace(/^cal:/, "") + " calendar");
   // Reserved: optional future email link (e.g. e.source_url). Intentionally renders nothing today.
   const emailLink = "";
+  const nt = x => (x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const tN = nt(e.title), dN = nt(e.details);
+  const notes = (e.notes || []).filter(n => { const x = nt(n); return x && !tN.includes(x) && !dN.includes(x); });
+  const more = e.link && /^https:\/\//.test(e.link) ? `<a class="ds-link" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link_label || "More info")}<span aria-hidden="true"> ↗</span></a>` : "";
+  const about = e.details ? `<div class="ds-about"><p>${esc(e.details)}</p>${more}</div>`
+    : (!notes.length ? `<p class="ds-none">No extra details for this one.</p>${more}` : more);
   return `<div class="ds-grab" aria-hidden="true"></div>
     <div class="ds-head" style="--k:${ctx.colorOf(e.kids)}"><h2 id="dsTitle">${esc(e.title)}</h2>
       <button class="ds-x" type="button" aria-label="Close details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     ${kidsHtml ? `<div class="ds-kids">${kidsHtml}</div>` : ""}
+    ${about}
     <dl class="ds-facts">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
-    ${(e.notes || []).length ? `<div class="ds-notes"><h3>Notes</h3>${e.notes.map(n => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
+    ${notes.length ? `<div class="ds-notes"><h3>Notes</h3>${notes.map(n => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${emailLink}
     ${src.length ? `<div class="ds-src">from: ${esc(src.join(" · "))}</div>` : ""}`;
 }
@@ -995,7 +1011,7 @@ function laterRow(i, ctx) {
 function contactRows(list) {
   const initials = n => n.replace(/^(mrs?|ms|dr)\.?\s+/i, "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
   return `<ul class="rows">${list.map(c => `<li><div class="contact"><div class="avatar">${esc(initials(c.name))}</div>
-    <div style="min-width:0"><div class="name" style="font-weight:600">${esc(c.name)}</div><div class="cap">${esc([c.role, c.phone].filter(Boolean).join(" · "))}</div>${c.notes ? `<div class="cap" style="color:var(--faint)">${esc(c.notes)}</div>` : ""}</div>
+    <div style="min-width:0"><div class="name" style="font-weight:600">${esc(c.name)}</div><div class="cap">${esc([c.role, c.phone].filter(Boolean).join(" · "))}</div>${c.email ? `<div class="cap"><a class="cmail" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>` : ""}${c.notes ? `<div class="cap" style="color:var(--faint)">${esc(c.notes)}</div>` : ""}</div>
     <div class="acts">${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ""))}" aria-label="Call">${FI.phone}</a>` : ""}${c.email ? `<a href="mailto:${esc(c.email)}" aria-label="Email">${FI.mail}</a>` : ""}</div></div></li>`).join("")}</ul>`;
 }
 
@@ -1105,18 +1121,24 @@ function viewSchool(data, ctx) {
   out.push(`<div class="fhead"><h1>School</h1><div class="sub">${students.length ? `${students.length} students` : ""}</div></div>`);
   const fact = (k, v) => v ? `<div class="fact"><span>${k}</span><b>${v}</b></div>` : "";
   const tel = p => `<a href="tel:${esc(p.replace(/[^\d+]/g, ""))}">${esc(p)}</a>`, mail = m => `<a href="mailto:${esc(m)}">${esc(m)}</a>`;
-  out.push(`<section style="margin-top:18px">${S ? `<div class="card school"><div class="sch-top"><div class="sch-ic">${FI.school}</div><div><h3>${esc(S.name)}</h3><div class="city">${esc(S.city || "")}</div></div></div>
+  const lnk = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+  const lunch = (S && S.lunch || []).map(l => `${esc(l.kid)} (${esc(l.grade)}): lunch ${esc(l.eat)}, recess ${esc(l.recess)}`).join("<br>");
+  const card = S ? `<section><div class="sh"><h2>School info</h2></div><div class="card school"><div class="sch-top"><div class="sch-ic">${FI.school}</div><div><h3>${esc(S.name)}</h3><div class="city">${esc(S.city || "")}</div></div></div>
       <div class="facts">${fact("School hours", esc(S.hours || "—"))}${fact("Early release", esc(S.early_release || "—"))}
-      ${fact("Address", S.address ? esc(S.address) : "")}
+      ${fact("Lunch", lunch)}
+      ${fact("Address", S.address_full ? lnk("https://maps.google.com/?q=" + encodeURIComponent(S.address_full), S.address_full) : S.address ? esc(S.address) : "")}
       ${fact("Office", [S.phone && tel(S.phone), S.office_email && mail(S.office_email)].filter(Boolean).join("<br>"))}
-      ${fact("PTO", [S.pto_email && mail(S.pto_email), S.pto_phone && tel(S.pto_phone)].filter(Boolean).join("<br>"))}</div>
-      ${students.length ? `<div class="kids">${students.map(k => `<span class="kidchip" style="--k:${k.color}">${esc(k.name)} <small>· ${esc(k.detail || "")}</small></span>`).join("")}</div>` : ""}</div>`
-    : ""}</section>`);
+      ${fact("Office hours", esc(S.office_hours || ""))}
+      ${fact("Principal", S.principal ? esc(S.principal) + (S.principal_email ? "<br>" + mail(S.principal_email) : "") : "")}
+      ${fact("PTO", [S.pto_email && mail(S.pto_email), S.pto_phone && tel(S.pto_phone)].filter(Boolean).join("<br>"))}
+      ${fact("Links", [S.website && lnk(S.website, "School website"), S.bell_link && lnk(S.bell_link, "Bell schedule"), S.calendar_link && lnk(S.calendar_link, "Elementary calendar")].filter(Boolean).join("<br>"))}</div>
+      ${students.length ? `<div class="kids">${students.map(k => `<span class="kidchip" style="--k:${k.color}">${esc(k.name)} <small>· ${esc(k.detail || "")}</small></span>`).join("")}</div>` : ""}</div></section>` : "";
   out.push(`<section><div class="sh"><h2>Forms &amp; deadlines</h2><span class="meta">${dls.length ? `${dls.length} open${late ? ` · <span class="late">${late} overdue</span>` : ""}` : ""}</span></div>
     ${dls.length ? `<div class="card"><ul class="items">${dls.map(i => dueRow(i, ctx)).join("")}</ul></div>` : fEmpty(ctx, "No forms or deadlines", "any forms or deadlines", FI.flag)}</section>`);
   out.push(`<section><div class="sh"><h2>School dates</h2><span class="meta">${dates.length ? dates.length + " coming up" : ""}</span></div>
     ${dates.length ? agendaList(dates, ctx) : fEmpty(ctx, "No school dates yet", "any school dates", FI.cal.replace(/30/g, "20"))}</section>`);
   if ((ctx.F.contacts_school || []).length) out.push(`<section><div class="sh"><h2>Teachers</h2></div><div class="card">${contactRows(ctx.F.contacts_school)}</div></section>`);
+  out.push(card);
   return out.join("");
 }
 
