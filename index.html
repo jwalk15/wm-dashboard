@@ -1122,12 +1122,12 @@ function viewSchool(data, ctx) {
   const fact = (k, v) => v ? `<div class="fact"><span>${k}</span><b>${v}</b></div>` : "";
   const tel = p => `<a href="tel:${esc(p.replace(/[^\d+]/g, ""))}">${esc(p)}</a>`, mail = m => `<a href="mailto:${esc(m)}">${esc(m)}</a>`;
   const lnk = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
-  const lunch = (S && S.lunch || []).map(l => `${esc(l.kid)} (${esc(l.grade)}): lunch ${esc(l.eat)}, recess ${esc(l.recess)}`).join("<br>");
+  const lunch = (S && S.lunch || []).map(l => `${esc(l.kid)} · ${esc(l.eat)}`).join("<br>");
   const card = S ? `<section><div class="sh"><h2>School info</h2></div><div class="card school"><div class="sch-top"><div class="sch-ic">${FI.school}</div><div><h3>${esc(S.name)}</h3><div class="city">${esc(S.city || "")}</div></div></div>
       <div class="facts">${fact("School hours", esc(S.hours || "—"))}${fact("Early release", esc(S.early_release || "—"))}
-      ${fact("Lunch", lunch)}
+      ${fact("Lunch", lunch)}${fact("Recess", (S && S.lunch || []).map(l => `${esc(l.kid)} · ${esc(l.recess)}`).join("<br>"))}
       ${fact("Address", S.address_full ? lnk("https://maps.google.com/?q=" + encodeURIComponent(S.address_full), S.address_full) : S.address ? esc(S.address) : "")}
-      ${fact("Office", [S.phone && tel(S.phone), S.office_email && mail(S.office_email)].filter(Boolean).join("<br>"))}
+      ${fact("Office &amp; attendance", [S.phone && tel(S.phone), S.office_email && mail(S.office_email)].filter(Boolean).join("<br>"))}
       ${fact("Office hours", esc(S.office_hours || ""))}
       ${fact("Principal", S.principal ? esc(S.principal) + (S.principal_email ? "<br>" + mail(S.principal_email) : "") : "")}
       ${fact("PTO", [S.pto_email && mail(S.pto_email), S.pto_phone && tel(S.pto_phone)].filter(Boolean).join("<br>"))}
