@@ -966,7 +966,7 @@ function upNext(data, ctx) {
     if (soon) rows.push(["health", `${zs} upload due in ${dayDiff(t, soon.due)} days`, ""]);
     else if (!od && H.items.length) rows.push(["health", `${H.items.length} open ${zs} ${H.items.length === 1 ? "item" : "items"}`, ""]);
   }
-  const bills = ((data.bills && data.bills.items) || []).filter(b => b.due_date && b.due_date >= t && b.due_date <= addD(t, 2));
+  const bills = ((data.bills && data.bills.items) || []).filter(b => !/\b(paid|autopay)\b/i.test(b.item || "") && b.due_date && b.due_date >= t && b.due_date <= addD(t, 2));
   if (bills.length) rows.push(["money", `${bills.length} ${bills.length === 1 ? "bill" : "bills"} due by ${wk(addD(t, 2))}`, ""]);
   const todos = ctx.of("home").filter(a => a.kind === "todo" && a.status !== "done");
   if (todos.length) rows.push(["home", `${todos.length} open ${todos.length === 1 ? "to-do" : "to-dos"}`, ""]);
