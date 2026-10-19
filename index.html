@@ -154,6 +154,23 @@ section{margin-top:34px}
 .mini.over i{background:var(--bad);opacity:1}
 .mini.soft i{opacity:.35}
 .over-note{color:var(--bad);font-size:12px;font-weight:600;margin-left:6px}
+.mini.ok i{background:var(--good);opacity:.9}
+.bar.ok i{background:var(--good)}
+.asof{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.asof .badge{font-size:11.5px;padding:3px 8px}
+.headline .of{font-size:15px;color:var(--muted);font-weight:500;margin-left:8px;white-space:nowrap}
+.nobudget{margin-top:8px;font-size:12.5px;color:var(--muted)}
+details.more{margin-top:4px}
+details.more>summary{list-style:none;cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:10px 0 2px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more[open]>summary .sa{display:none}
+details.more:not([open])>summary .sl{display:none}
+.bgroup{margin-top:14px;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.bgroup .num{letter-spacing:0;text-transform:none;font-size:13px;color:var(--ink);font-weight:620}
+.loanline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:10px}
+.loanline .pay{font-size:14px;color:var(--muted);white-space:nowrap}
+.loanline .pay b{color:var(--ink);font-weight:620}
+.loan details.more .stats{margin-top:8px}
 .skim{margin-top:6px;padding:14px 14px;border-radius:16px;border:1px dashed var(--faint);color:var(--muted);
   background:repeating-linear-gradient(135deg, transparent 0 9px, var(--track) 9px 10px)}
 .skim .row .name,.skim .row .val{color:var(--muted)}
@@ -578,13 +595,33 @@ function progress(spent, target, word) {
   return `<div class="bar ${over ? "over" : ""}"><i style="width:${(pct(spent, target) * 100).toFixed(1)}%"></i></div>
     <div class="bar-legend num"><span><b>${money(spent, false)}</b> spent</span><span>${over ? `<span class="neg">${money(spent - target, false)} over</span> · ` : ""}${money(target, false)} ${word}</span></div>`;
 }
-function catRows(items, opts) {
+const catName = c => (DATA && DATA.labels && DATA.labels.category_display || {})[c] || cap1(c);
+function asOf(snap, today) {
+  if (!snap) return "";
+  const age = Math.floor((ymd(today) - ymd(snap)) / 864e5);
+  return `<span class="asof"><span>as of ${esc(dayShort(snap))}</span>${age > 8 ? `<span class="badge stale">${I.clock}Stale · ${age} days</span>` : ""}</span>`;
+}
+function headline(label, spent, target, word) {
+  const over = isNum(spent) && isNum(target) && spent > target;
+  return `<div class="card headline"><div class="label"><span class="l">${label}</span></div>
+    <div class="big num ${over ? "neg" : ""}">${bigMoney(spent)}<span class="of">of ${money(target)}</span></div>
+    ${isNum(spent) ? "" : '<div class="cap">Not recorded in this snapshot</div>'}
+    ${isNum(spent) && isNum(target) ? `<div class="bar ${over ? "over" : "ok"}"><i style="width:${(pct(spent, target) * 100).toFixed(1)}%"></i></div>
+    <div class="bar-legend num"><span>${over ? '<span class="neg">Over</span>' : "Under"} ${esc(word)}</span><span>${Math.round(spent / target * 100)}%</span></div>` : ""}</div>`;
+}
+function catBlock(items) {
+  const anyBudget = items.some(i => isNum(i.budget) && i.budget > 0);
+  const sorted = items.slice().sort((a, b) => (isNum(b.spent) ? b.spent : -1) - (isNum(a.spent) ? a.spent : -1));
+  const top = sorted.slice(0, 5), rest = sorted.slice(5);
+  return `${anyBudget ? "" : '<div class="nobudget">No budgets set</div>'}${catRows(top)}${rest.length
+    ? `<details class="more"><summary><span class="sa">Show all ${items.length}</span><span class="sl">Show fewer</span></summary>${catRows(rest)}</details>` : ""}`;
+}
+function catRows(items) {
   return `<ul class="rows">${items.map(it => {
     const has = isNum(it.budget) && it.budget > 0, over = has && isNum(it.spent) && it.spent > it.budget;
-    const w = has ? pct(it.spent, it.budget) : pct(it.spent, opts.scale);
-    return `<li><div class="row"><span class="name">${esc(cap1(it.category))}</span>
+    return `<li><div class="row"><span class="name">${esc(catName(it.category))}</span>
       <span class="val num">${money(it.spent, false)}${has ? ` <small>/ ${money(it.budget, false)}</small>` : ""}${over ? `<span class="over-note">over</span>` : ""}</span></div>
-      <div class="mini ${over ? "over" : has ? "" : "soft"}"><i style="width:${(w * 100).toFixed(1)}%"></i></div></li>`;
+      ${has ? `<div class="mini ${over ? "over" : "ok"}"><i style="width:${(pct(it.spent, it.budget) * 100).toFixed(1)}%"></i></div>` : ""}</li>`;
   }).join("")}</ul>`;
 }
 
@@ -593,6 +630,7 @@ function render(data) {
   EMPTY = !data.has_data;
   const f = freshness(data);
   const W = data.weekly, M = data.monthly, C = data.categories || {};
+  const TODAY = (() => { const p = denverParts(new Date(), { year: "numeric", month: "2-digit", day: "2-digit" }); return `${p.year}-${p.month}-${p.day}`; })();
   const out = [];
 
   const topbar = (`<header class="topbar"><div class="topbar-row">
@@ -611,7 +649,7 @@ function render(data) {
 
   /* cash buckets */
   const B = W || M;
-  out.push(`<section><div class="sh"><h2>Cash</h2><span class="meta">Three buckets · never blended</span></div>
+  out.push(`<section><div class="sh"><h2>Cash</h2><span class="meta">${B ? asOf(B.snapshot_date, TODAY) : "Three buckets · never blended"}</span></div>
     ${B ? `<div class="grid buckets">
       <div class="card bucket-house"><div class="label"><span class="l">Household</span></div><div class="big num">${bigMoney(B.household_cash)}</div><div class="cap">Family spending money</div></div>
       <div class="card"><div class="label"><span class="l">Practice</span></div><div class="mid num">${bigMoney(B.practice_cash)}</div><div class="cap">${esc((data.labels && data.labels.practice_entity) || "Practice operating cash")}</div></div>
@@ -621,18 +659,28 @@ function render(data) {
   /* this week */
   const wTarget = W ? (isNum(W.weekly_burn_target) ? W.weekly_burn_target : W.weekly_burn_target_default) : null;
   let bills = data.bills && data.bills.items || [];
-  if (W && W.week_start && W.week_end) bills = bills.filter(b => !b.due_date || (b.due_date >= W.week_start && b.due_date <= W.week_end));
-  out.push(`<section><div class="sh"><h2>This week</h2><span class="meta num">${W ? esc(weekRange(W.week_start, W.week_end)) : ""}</span></div>
-    ${W ? `<div class="grid">
-      <div class="card"><div class="label"><span class="l">Spending by category</span></div>
-        ${C.week && C.week.items.length ? catRows(C.week.items, { scale: wTarget }) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
-    </div>` : `<div class="card">${waiting(true, "Free cash, spending vs the weekly target, bills and odd charges.")}</div>`}
-    <div class="grid two" style="margin-top:12px">
-      <div class="card"><div class="label"><span class="l">Bills due this week</span>${bills.length ? `<span class="num">${money(bills.reduce((s, b) => s + (isNum(b.amount) ? b.amount : 0), 0), false)}</span>` : ""}</div>
-        ${data.bills ? (bills.length ? `<ul class="rows" style="margin-top:12px">${bills.map(b => `<li><div class="bill">
+  const isPaid = b => /\b(paid|autopay)\b/i.test(b.item || "") || /^paid/i.test(b.status || "");
+  if (W && W.week_start && W.week_end) bills = bills.filter(b => b.due_date ? (b.due_date >= W.week_start && b.due_date <= W.week_end) : !isPaid(b));
+  const billsDue = bills.filter(b => !isPaid(b)), billsPaid = bills.filter(isPaid);
+  const sum = xs => xs.reduce((t, b) => t + (isNum(b.amount) ? b.amount : 0), 0);
+  const billLi = b => `<li><div class="bill">
             ${b.due_date ? `<div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${ymd(b.due_date).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`}
             ${billText(b)}
-            <div class="right"><span class="amt num">${money(b.amount)}</span>${b.status ? `<span class="chip ${b.status === "GREEN" ? "good" : "bad"}">${b.status}</span>` : ""}</div></div></li>`).join("")}</ul>`
+            <div class="right"><span class="amt num">${money(b.amount, false)}</span>${b.status ? `<span class="chip ${b.status === "GREEN" ? "good" : "bad"}">${esc(b.status)}</span>` : ""}</div></div></li>`;
+  const wkCat = C.week && C.week.items.length && C.week.period_start === (W && W.week_start) ? C.week : null;
+  out.push(`<section><div class="sh"><h2>This week</h2><span class="meta num">${W ? esc(weekRange(W.week_start, W.week_end)) + " · " + asOf(W.snapshot_date, TODAY) : ""}</span></div>
+    ${W ? `<div class="grid two">
+      ${headline("Spent this week", W.spend_to_date, wTarget, isNum(W.weekly_burn_target) ? "weekly target" : "default target")}
+      <div class="card"><div class="label"><span class="l">Spending by category</span>${wkCat && wkCat.snapshot_date !== W.snapshot_date ? asOf(wkCat.snapshot_date, TODAY) : ""}</div>
+        ${wkCat ? catBlock(wkCat.items) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
+    </div>` : `<div class="card">${waiting(true, "Spending vs the weekly target, bills and odd charges.")}</div>`}
+    <div class="grid two" style="margin-top:12px">
+      <div class="card"><div class="label"><span class="l">Bills this week</span>${data.bills ? asOf(data.bills.snapshot_date, TODAY) : ""}</div>
+        ${data.bills ? (bills.length ? `
+          <div class="bgroup"><span>Due</span><span class="num">${money(sum(billsDue), false)}</span></div>
+          ${billsDue.length ? `<ul class="rows" style="margin-top:6px">${billsDue.map(billLi).join("")}</ul>` : `<p class="cap" style="margin:6px 0 0">Nothing left to pay by hand.</p>`}
+          ${billsPaid.length ? `<div class="bgroup"><span>Paid / autopay</span><span class="num">${money(sum(billsPaid), false)}</span></div>
+          <ul class="rows" style="margin-top:6px">${billsPaid.map(billLi).join("")}</ul>` : ""}`
           : `<p class="cap">No bills due this week.</p>`) : waiting(true, "Bills due this week with a GREEN / RED check.")}</div>
       <div class="card"><div class="label"><span class="l">Odd charges · last 48h</span></div>
         ${W ? oddCharges(W.odd_charges_48h) : waiting(true, "Anything unusual from the last 48 hours.")}</div>
@@ -644,31 +692,36 @@ function render(data) {
   const allowed = data.categories_allowed || [];
   let monthItems = null;
   if (C.month) { const by = {}; C.month.items.forEach(i => by[i.category] = i); monthItems = allowed.map(c => by[c] || { category: c, spent: null, budget: null }); }
-  out.push(`<section><div class="sh"><h2>This month</h2><span class="meta">${esc(monthName)}</span></div>
-    ${M ? `<div class="grid">
+  const moCat = C.month && C.month.items.length ? C.month : null;
+  out.push(`<section><div class="sh"><h2>This month</h2><span class="meta">${esc(monthName)}${M ? " · " + asOf(M.snapshot_date, TODAY) : ""}</span></div>
+    ${M ? `<div class="grid two">
+      ${headline("Spent this month", M.spend_to_date, mTarget, isNum(M.monthly_burn_target) ? "monthly target" : "default target")}
       <div class="card"><div class="label"><span class="l">Income received</span></div><div class="big num">${bigMoney(M.income_received)}</div>
-        <div class="cap">Before the 20% tax skim</div></div>
+        <div class="cap">Before the tax skim</div></div>
     </div>` : ""}
-    <div class="card" style="margin-top:${M ? 12 : 0}px"><div class="label"><span class="l">Spending by category</span>${C.month ? `<span>vs budget</span>` : ""}</div>
-      ${monthItems ? `<div class="catgrid" style="margin-top:10px">${catRows(monthItems, { scale: mTarget })}</div>` : waiting(true, "All 12 categories vs budget, plus free cash vs the monthly target.")}
-      ${M ? `<div class="skim"><div class="row"><span class="name">${I.lock.replace('width="15" height="15"', 'width="13" height="13" style="vertical-align:-1px;margin-right:6px"')}Tax skim · 20%</span><span class="val num">${money(M.tax_skim_20pct)}</span></div>
-        <div class="cap">Set aside for taxes · not spendable</div></div>` : ""}
+    <div class="card" style="margin-top:${M ? 12 : 0}px"><div class="label"><span class="l">Spending by category</span>${moCat ? `<span>${moCat.items.some(i => isNum(i.budget) && i.budget > 0) ? "vs budget" : ""}${moCat.snapshot_date !== (M && M.snapshot_date) ? " " + asOf(moCat.snapshot_date, TODAY) : ""}</span>` : ""}</div>
+      ${monthItems ? `<div class="catgrid" style="margin-top:10px">${catBlock(monthItems)}</div>` : waiting(true, "All 12 categories vs budget.")}
+      ${M ? `<div class="skim"><div class="row"><span class="name">${I.lock.replace('width="15" height="15"', 'width="13" height="13" style="vertical-align:-1px;margin-right:6px"')}Tax skim</span><span class="val num">${money(M.tax_skim_20pct)}</span></div>
+        <div class="cap">20% of net production bonus · set aside for taxes, not spendable</div></div>` : ""}
     </div></section>`);
 
   /* debt */
   const loans = data.loans && data.loans.items || [];
-  const focus = loans.find(l => isNum(l.balance) && l.balance > 0);
-  out.push(`<section><div class="sh"><h2>Debt payoff</h2><span class="meta">Locked order</span></div>
+  const focus = loans.find(l => !(isNum(l.balance) && l.balance <= 0));
+  out.push(`<section><div class="sh"><h2>Debt payoff</h2><span class="meta">${data.loans ? asOf(data.loans.snapshot_date, TODAY) : "Locked order"}</span></div>
     <div class="note">${I.shield}<span>${esc((data.labels && data.labels.extra_principal_rule) || "Extra principal comes only from household surplus or cancelled leaks.")}</span></div>
     ${loans.length ? `<div class="grid three">${loans.map(l => `<div class="card loan">
         <div class="top"><span class="ord num">${l.loan_order}</span><h3>${esc(cap1(l.loan_name))}</h3>${l === focus ? `<span class="chip focus">Extra goes here</span>` : ""}</div>
-        <div class="mid num" style="margin-top:12px">${bigMoney(l.balance)}</div><div class="cap">${isNum(l.balance) ? "Balance" : "Balance not recorded yet"}</div>
+        <div class="loanline"><div class="mid num">${bigMoney(l.balance)}</div>
+          <span class="pay num">${isNum(l.payment) ? `<b>${money(l.payment)}</b>/mo` : "Payment —"}</span></div>
+        <div class="cap">${isNum(l.balance) ? "Balance" : "Balance not recorded in the latest update"}</div>
+        <details class="more"><summary><span class="sa">Details</span><span class="sl">Hide details</span></summary>
         <div class="stats num">
           <div class="stat"><small>Rate</small><b>${isNum(l.rate_pct) ? l.rate_pct.toFixed(2) + "%" : "—"}</b></div>
-          <div class="stat"><small>Payment</small><b>${money(l.payment, false)}${isNum(l.payment) ? '<span class="cap">/mo</span>' : ""}</b></div>
+          <div class="stat"><small>Payment</small><b>${money(l.payment)}${isNum(l.payment) ? '<span class="cap">/mo</span>' : ""}</b></div>
           <div class="stat"><small>Extra principal paid</small><b>${money(l.extra_principal_paid, false)}</b></div>
           <div class="stat"><small>Projected payoff</small><b>${l.projected_payoff_date ? esc(monthYear(l.projected_payoff_date)) : "—"}</b></div>
-        </div></div>`).join("")}</div>`
+        </div></details></div>`).join("")}</div>`
       : `<div class="card">${waiting(true, "Each loan in locked payoff order, with balance, rate and payoff date.")}</div>`}</section>`);
 
   /* goals */
@@ -684,22 +737,24 @@ function render(data) {
           <div class="cap">${g.target_date ? "by " + esc(longDate(g.target_date)) : "No target date"}</div></div></div>`;
     }).join("")}</div>` : `<div class="card">${waiting(true, "Each goal with its target, date and a progress ring.")}</div>`}</section>`);
 
-  /* trends */
+  /* trends: a chart only once it has 2+ data points */
   const mb = (data.history && data.history.monthly_buckets) || [];
   const lh = data.history && data.history.loan_balances;
+  const lser = lh ? lh.series.filter(x => x.balances.filter(isNum).length >= 2) : [];
+  const starts = t => `<p class="cap" style="margin:8px 0 0">${t} · starts after 2 updates</p>`;
   out.push(`<section><div class="sh"><h2>Trends</h2></div>
     <div class="grid">
       <div class="card"><div class="label"><span class="l">Cash buckets by month</span></div>
         ${mb.length > 1 ? `<div class="legend"><span><i style="background:var(--accent)"></i>Household</span><span><i style="background:var(--c2)"></i>Practice</span><span><i class="dash"></i>Tax reserve</span></div>
-          <div class="chartbox"><canvas id="cashChart" aria-label="Cash buckets by month"></canvas></div>` : waiting(true, mb.length ? "The trend line starts once a second month is recorded." : "Month-end Household, Practice and Tax reserve over time.", mb.length ? "One month so far" : "")}</div>
+          <div class="chartbox"><canvas id="cashChart" aria-label="Cash buckets by month"></canvas></div>` : starts(mb.length ? "1 month so far" : "No months yet")}</div>
       <div class="card"><div class="label"><span class="l">Loan balances</span></div>
-        ${lh && lh.series.some(x => x.balances.some(isNum)) ? `<ul class="rows" style="margin-top:10px">${lh.series.map(s => {
+        ${lser.length ? `<ul class="rows" style="margin-top:10px">${lser.map(s => {
           const vals = s.balances.filter(isNum), first = vals[0], last = vals[vals.length - 1];
           const firstIdx = s.balances.findIndex(isNum);
           return `<li><div class="spark"><div><div class="name" style="font-weight:600"><span class="ord num" style="display:inline-grid;width:22px;height:22px;font-size:12px;margin-right:8px">${s.loan_order}</span>${esc(cap1(s.loan_name))}</div></div>
-            <div class="delta num">${isNum(last) ? `<b style="color:var(--ink);font-weight:620">${money(last, false)}</b>` : "—"}${vals.length > 1 && first !== last ? `<br>${last < first ? "↓" : "↑"} ${money(Math.abs(last - first), false)} since ${esc(dayShort(lh.dates[firstIdx]))}` : ""}</div>
+            <div class="delta num"><b style="color:var(--ink);font-weight:620">${money(last, false)}</b>${first !== last ? `<br>${last < first ? "↓" : "↑"} ${money(Math.abs(last - first), false)} since ${esc(dayShort(lh.dates[firstIdx]))}` : ""}</div>
             <div class="sbox"><canvas id="loan${s.loan_order}"></canvas></div></div></li>`;
-        }).join("")}</ul>` : waiting(true, lh ? "Charts appear once balances are recorded." : "Each loan's balance falling over time, in payoff order.", lh ? "Not recorded yet" : "")}</div>
+        }).join("")}</ul>${lser.length < lh.series.length ? starts("Other loans") : ""}` : starts("Balances")}</div>
     </div></section>`);
 
   out.push(`<footer>${data.example ? "<b>EXAMPLE DATA</b> — not real numbers<br>" : ""}Private · end-to-end encrypted · times in Mountain Time<br>Source: ${esc(data.source || "snapshot sheet")}</footer>`);
