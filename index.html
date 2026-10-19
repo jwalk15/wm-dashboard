@@ -365,10 +365,10 @@ details.done-list summary::-webkit-details-marker{display:none}
 .budget .of b{color:var(--ink2);font-weight:600}
 
 /* ---- merged app additions ---- */
-.tabbar{grid-template-columns:repeat(6,1fr);width:min(calc(100% - 16px),560px);padding:5px;height:64px}
-.tabbar .pill{top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/6)}
-.tabbar button{font-size:10.5px;letter-spacing:0;gap:2px;padding:0}
-.tabbar button svg{width:21px;height:21px}
+.tabbar{grid-template-columns:repeat(5,1fr);width:min(calc(100% - 20px),520px);padding:6px;height:66px}
+.tabbar .pill{top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/5)}
+.tabbar button{font-size:11.5px;letter-spacing:0;gap:3px;padding:0}
+.tabbar button svg{width:22px;height:22px}
 .ev-note{margin-top:6px;font-size:13px;color:var(--ink2);background:var(--track);border-radius:10px;padding:7px 10px;line-height:1.35}
 .ev .tag.bday{display:inline-flex;align-items:center;gap:4px;color:#B0458A;background:rgba(176,69,138,.11)}
 @media (prefers-color-scheme: dark){.ev .tag.bday{color:#F0A3D2;background:rgba(240,163,210,.13)}}
@@ -789,7 +789,6 @@ const TABS = [
   { id: "school", label: "School", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.2c0 1.6 2.5 3.3 5.5 3.3s5.5-1.7 5.5-3.3v-4.2"/><path d="M21.5 9.5v5"/></svg>' },
   { id: "health", label: "Health", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.6 12 20 12 20z"/><path d="M8 12h2.2l1.2-2 1.6 4 1.2-2H16"/></svg>' },
   { id: "money", label: "Money", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3.5"/><path d="M3 10h18"/><path d="M16 14.5h2"/></svg>' },
-  { id: "home", label: "Home", ic: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>' },
 ];
 const TI = Object.fromEntries(TABS.map(t => [t.id, t.ic]));
 const FI = {
@@ -968,8 +967,6 @@ function upNext(data, ctx) {
   }
   const bills = ((data.bills && data.bills.items) || []).filter(b => !/\b(paid|autopay)\b/i.test(b.item || "") && b.due_date && b.due_date >= t && b.due_date <= addD(t, 2));
   if (bills.length) rows.push(["money", `${bills.length} ${bills.length === 1 ? "bill" : "bills"} due by ${wk(addD(t, 2))}`, ""]);
-  const todos = ctx.of("home").filter(a => a.kind === "todo" && a.status !== "done");
-  if (todos.length) rows.push(["home", `${todos.length} open ${todos.length === 1 ? "to-do" : "to-dos"}`, ""]);
   return `<section><div class="sh"><h2>Up next</h2></div>
     ${rows.length ? `<div class="card upnext">${rows.map(([tab, txt, cls]) => `<button class="un ${cls}" data-go="${tab}"><span class="un-ic">${TI[tab]}</span><span class="un-t">${esc(txt)}</span><span class="un-tab">${esc(TABS.find(x => x.id === tab).label)}${FI.chev}</span></button>`).join("")}</div>`
       : `<div class="allclear">${I.check}<div>All clear<span>Nothing coming up that needs you.</span></div></div>`}</section>`;
@@ -1047,35 +1044,13 @@ function viewHealth(data, ctx) {
   return out.join("");
 }
 
-/* ---- Home ---- */
-function viewHome(data, ctx) {
-  const out = [];
-  const todos = ctx.of("home").filter(a => a.kind === "todo");
-  const openT = todos.filter(i => i.status !== "done"), doneT = todos.filter(i => i.status === "done");
-  const contacts = ctx.F.contacts_home || [], helpers = ctx.F.helpers || [];
-  out.push(`<div class="fhead"><h1>Home</h1><div class="sub">To-dos, people and helpers</div></div>`);
-  const todoRow = i => { const [rel, cls] = i.due ? relDue(i.due, ctx.today) : ["", ""];
-    return `<li class="${i.status === "done" ? "isdone" : ""}"><span class="tick ${i.status === "done" ? "done" : ""}">${i.status === "done" ? I.check.replace(/18/g, "13") : ""}</span>
-      <div style="min-width:0"><div class="t">${esc(i.title)}</div><div class="s">${i.kids && i.kids.length ? ctx.chips(i.kids) : ""}${rel && i.status !== "done" ? `<span class="${cls}">${esc(rel)}</span>` : ""}</div>
-      ${(i.notes || []).map(n => `<div class="cap" style="margin-top:3px">${esc(n)}</div>`).join("")}</div><span></span></li>`; };
-  out.push(`<section style="margin-top:22px"><div class="sh"><h2>To-dos</h2><span class="meta">${openT.length ? openT.length + " open" : ""}</span></div>
-    ${todos.length ? `<div class="card">${openT.length ? `<ul class="items todos">${openT.map(todoRow).join("")}</ul>` : `<div class="allclear" style="background:none;padding:0">${I.check}<div>Everything's done</div></div>`}
-      ${doneT.length ? `<details class="done-list"><summary>${doneT.length} done ›</summary><ul class="items todos" style="margin-top:8px">${doneT.map(todoRow).join("")}</ul></details>` : ""}</div>`
-    : fEmpty(ctx, "No to-dos yet", "any to-dos", FI.list)}</section>`);
-  out.push(`<section><div class="sh"><h2>Contacts</h2></div>${contacts.length ? `<div class="card">${contactRows(contacts)}</div>` : fEmpty(ctx, "No contacts yet", "any contacts", FI.user)}</section>`);
-  if (helpers.length) out.push(`<section><div class="sh"><h2>Helpers</h2><span class="meta">${helpers.length} bots</span></div>
-    <div class="card helpers"><div class="hchips">${helpers.map(h => `<span>${FI.bot}${esc(h.name)}</span>`).join("")}</div>
-      <details class="done-list"><summary>What each one does ›</summary><ul>${helpers.map(h => `<li><div><b>${esc(h.name)}</b><span>${esc(h.does)}</span></div></li>`).join("")}</ul></details></div></section>`);
-  return out.join("");
-}
-
 function renderShell(data, topbar, moneyHTML) {
   const ctx = famCtx(data);
   const h = location.hash.slice(1);
   if (TABS.some(t => t.id === h)) TAB = h;
   const idx = TABS.findIndex(t => t.id === TAB);
   const views = { today: viewToday(data, ctx), calendar: viewCalendar(data, ctx), school: viewSchool(data, ctx),
-    health: viewHealth(data, ctx), money: moneyHTML, home: viewHome(data, ctx) };
+    health: viewHealth(data, ctx), money: moneyHTML };
   document.body.classList.add("has-tabs");
   const H = ctx.F.health;
   const healthDot = H && (H.items.some(i => i.deadline && i.deadline.due < ctx.today) || (H.deadlines || []).some(d => d.due < ctx.today));
