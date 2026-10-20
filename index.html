@@ -730,12 +730,9 @@ function render(data) {
             ${b.due_date ? `<div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${ymd(b.due_date).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`}
             ${billText(b)}
             <div class="right"><span class="amt num">${money(b.amount, false)}</span>${b.status ? `<span class="chip ${b.status === "GREEN" ? "good" : "bad"}">${esc(b.status)}</span>` : ""}</div></div></li>`;
-  const wkCat = C.week && C.week.items.length && C.week.period_start === (W && W.week_start) ? C.week : null;
   out.push(`<section><div class="sh"><h2>This week</h2><span class="meta num">${W ? esc(weekRange(W.week_start, W.week_end)) + " · " + asOf(W.snapshot_date, TODAY) : ""}</span></div>
-    ${W ? `<div class="grid two">
+    ${W ? `<div class="grid">
       ${headline("Spent this week", W.spend_to_date, wTarget, isNum(W.weekly_burn_target) ? "weekly target" : "default target")}
-      <div class="card"><div class="label"><span class="l">Spending by category</span>${wkCat && wkCat.snapshot_date !== W.snapshot_date ? asOf(wkCat.snapshot_date, TODAY) : ""}</div>
-        ${wkCat ? catBlock(wkCat.items) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
     </div>` : `<div class="card">${waiting(true, "Spending vs the weekly target and bills.")}</div>`}
     <div class="grid two" style="margin-top:12px">
       <div class="card"><div class="label"><span class="l">Bills this week</span>${data.bills ? asOf(data.bills.snapshot_date, TODAY) : ""}</div>
@@ -763,7 +760,7 @@ function render(data) {
       <div class="card"><div class="label"><span class="l">Income received</span></div><div class="big num">${bigMoney(M.income_received)}</div>
         <div class="cap">Before the tax skim</div></div>
     </div>` : ""}
-    <div class="card" style="margin-top:${M ? 12 : 0}px"><div class="label"><span class="l">Spending by category</span>${moCat ? `<span>${moCat.items.some(i => isNum(i.budget) && i.budget > 0) ? "vs budget" : ""}${moCat.snapshot_date !== (M && M.snapshot_date) ? " " + asOf(moCat.snapshot_date, TODAY) : ""}</span>` : ""}</div>
+    <div class="card" style="margin-top:${M ? 12 : 0}px"><div class="label"><span class="l">Spending by category · Month to date</span>${moCat ? `<span>${moCat.items.some(i => isNum(i.budget) && i.budget > 0) ? "vs monthly budget · " : ""}${asOf(moCat.snapshot_date, TODAY)}</span>` : ""}</div>
       ${monthItems ? `<div class="catgrid" style="margin-top:10px">${catBlock(monthItems)}</div>` : waiting(true, "All 12 categories vs budget.")}
       ${M ? `<div class="skim"><div class="row"><span class="name">${I.lock.replace('width="15" height="15"', 'width="13" height="13" style="vertical-align:-1px;margin-right:6px"')}Tax skim</span><span class="val num">${money(M.tax_skim_20pct)}</span></div>
         <div class="cap">20% of net production bonus · set aside for taxes, not spendable</div></div>` : ""}
