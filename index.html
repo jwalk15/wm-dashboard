@@ -171,6 +171,7 @@ details.more:not([open])>summary .sl{display:none}
 .loanline .pay{font-size:14px;color:var(--muted);white-space:nowrap}
 .loanline .pay b{color:var(--ink);font-weight:620}
 .loan details.more .stats{margin-top:8px}
+.ptag{font-size:11px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 .ltrend{margin-top:12px}.ltrend .sbox{height:56px;margin-top:6px;position:relative}
 .skim{margin-top:6px;padding:14px 14px;border-radius:16px;border:1px dashed var(--faint);color:var(--muted);
   background:repeating-linear-gradient(135deg, transparent 0 9px, var(--track) 9px 10px)}
@@ -720,6 +721,11 @@ function render(data) {
   if (W && W.week_start && W.week_end) bills = bills.filter(b => b.due_date ? (b.due_date >= W.week_start && b.due_date <= W.week_end) : !isPaid(b));
   const billsDue = bills.filter(b => !isPaid(b)), billsPaid = bills.filter(isPaid);
   const sum = xs => xs.reduce((t, b) => t + (isNum(b.amount) ? b.amount : 0), 0);
+  const RC = data.recent_charges || null;
+  const chargeLi = c => `<li><div class="bill">
+            <div class="cal"><small>${esc(fmtD(c.date, { month: "short" }))}</small><b class="num">${ymd(c.date).getUTCDate()}</b></div>
+            <div style="min-width:0"><div class="name" style="overflow-wrap:anywhere">${esc(c.merchant)}</div><div class="cap">${esc(c.category ? catName(c.category) : "Uncategorized")}${c.bucket === "practice" ? ` <span class="chip ns ptag">Practice</span>` : ""}</div></div>
+            <div class="right"><span class="amt num">${money(c.amount, false)}</span></div></div></li>`;
   const billLi = b => `<li><div class="bill">
             ${b.due_date ? `<div class="cal"><small>${esc(fmtD(b.due_date, { weekday: "short" }))}</small><b class="num">${ymd(b.due_date).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`}
             ${billText(b)}
@@ -731,7 +737,7 @@ function render(data) {
       <div class="card"><div class="label"><span class="l">Spending by category</span>${wkCat && wkCat.snapshot_date !== W.snapshot_date ? asOf(wkCat.snapshot_date, TODAY) : ""}</div>
         ${wkCat ? catBlock(wkCat.items) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
     </div>` : `<div class="card">${waiting(true, "Spending vs the weekly target and bills.")}</div>`}
-    <div class="grid" style="margin-top:12px">
+    <div class="grid two" style="margin-top:12px">
       <div class="card"><div class="label"><span class="l">Bills this week</span>${data.bills ? asOf(data.bills.snapshot_date, TODAY) : ""}</div>
         ${data.bills ? (bills.length ? `
           <div class="bgroup"><span>Due</span><span class="num">${money(sum(billsDue), false)}</span></div>
@@ -739,6 +745,9 @@ function render(data) {
           ${billsPaid.length ? `<div class="bgroup"><span>Paid / autopay</span><span class="num">${money(sum(billsPaid), false)}</span></div>
           <ul class="rows" style="margin-top:6px">${billsPaid.map(billLi).join("")}</ul>` : ""}`
           : `<p class="cap">No bills due this week.</p>`) : waiting(true, "Bills due this week with a GREEN / RED check.")}</div>
+      <div class="card"><div class="label"><span class="l">Last 5 charges</span>${RC ? asOf(RC.snapshot_date, TODAY) : ""}</div>
+        ${RC && RC.items.length ? `<ul class="rows" style="margin-top:6px">${RC.items.map(chargeLi).join("")}</ul>`
+          : waiting(true, "The five newest charges, with merchant and category, once CFO starts the recent charges list.", "Waiting for CFO's first snapshot")}</div>
     </div></section>`);
 
   /* this month */
