@@ -171,6 +171,7 @@ details.more:not([open])>summary .sl{display:none}
 .loanline .pay{font-size:14px;color:var(--muted);white-space:nowrap}
 .loanline .pay b{color:var(--ink);font-weight:620}
 .loan details.more .stats{margin-top:8px}
+.ltrend{margin-top:12px}.ltrend .sbox{height:56px;margin-top:6px;position:relative}
 .skim{margin-top:6px;padding:14px 14px;border-radius:16px;border:1px dashed var(--faint);color:var(--muted);
   background:repeating-linear-gradient(135deg, transparent 0 9px, var(--track) 9px 10px)}
 .skim .row .name,.skim .row .val{color:var(--muted)}
@@ -729,8 +730,8 @@ function render(data) {
       ${headline("Spent this week", W.spend_to_date, wTarget, isNum(W.weekly_burn_target) ? "weekly target" : "default target")}
       <div class="card"><div class="label"><span class="l">Spending by category</span>${wkCat && wkCat.snapshot_date !== W.snapshot_date ? asOf(wkCat.snapshot_date, TODAY) : ""}</div>
         ${wkCat ? catBlock(wkCat.items) : waiting(true, "Category totals for this week will show here.", "Not recorded yet")}</div>
-    </div>` : `<div class="card">${waiting(true, "Spending vs the weekly target, bills and odd charges.")}</div>`}
-    <div class="grid two" style="margin-top:12px">
+    </div>` : `<div class="card">${waiting(true, "Spending vs the weekly target and bills.")}</div>`}
+    <div class="grid" style="margin-top:12px">
       <div class="card"><div class="label"><span class="l">Bills this week</span>${data.bills ? asOf(data.bills.snapshot_date, TODAY) : ""}</div>
         ${data.bills ? (bills.length ? `
           <div class="bgroup"><span>Due</span><span class="num">${money(sum(billsDue), false)}</span></div>
@@ -738,8 +739,6 @@ function render(data) {
           ${billsPaid.length ? `<div class="bgroup"><span>Paid / autopay</span><span class="num">${money(sum(billsPaid), false)}</span></div>
           <ul class="rows" style="margin-top:6px">${billsPaid.map(billLi).join("")}</ul>` : ""}`
           : `<p class="cap">No bills due this week.</p>`) : waiting(true, "Bills due this week with a GREEN / RED check.")}</div>
-      <div class="card"><div class="label"><span class="l">Odd charges · last 48h</span></div>
-        ${W ? oddCharges(W.odd_charges_48h) : waiting(true, "Anything unusual from the last 48 hours.")}</div>
     </div></section>`);
 
   /* this month */
@@ -762,6 +761,11 @@ function render(data) {
     </div></section>`);
 
   /* debt */
+  const lh = data.history && data.history.loan_balances;
+  const spark = l => { const sr = lh && lh.series.find(x => x.loan_order === l.loan_order);
+    if (!sr || sr.balances.filter(isNum).length < 2) return "";
+    const v = sr.balances.filter(isNum), fi = sr.balances.findIndex(isNum), a = v[0], z = v[v.length - 1];
+    return `<div class="ltrend"><div class="cap">${a !== z ? `${z < a ? "↓" : "↑"} ${money(Math.abs(z - a), false)} since ${esc(dayShort(lh.dates[fi]))}` : "Balance trend"}</div><div class="sbox"><canvas id="loan${l.loan_order}" aria-label="${esc(cap1(l.loan_name))} balance trend"></canvas></div></div>`; };
   const loans = data.loans && data.loans.items || [];
   const focus = loans.find(l => !(isNum(l.balance) && l.balance <= 0));
   out.push(`<section><div class="sh"><h2>Debt payoff</h2><span class="meta">${data.loans ? asOf(data.loans.snapshot_date, TODAY) : "Locked order"}</span></div>
@@ -777,7 +781,7 @@ function render(data) {
           <div class="stat"><small>Payment</small><b>${money(l.payment)}${isNum(l.payment) ? '<span class="cap">/mo</span>' : ""}</b></div>
           <div class="stat"><small>Extra principal paid</small><b>${money(l.extra_principal_paid, false)}</b></div>
           <div class="stat"><small>Projected payoff</small><b>${l.projected_payoff_date ? esc(monthYear(l.projected_payoff_date)) : "—"}</b></div>
-        </div></details></div>`).join("")}</div>`
+        </div>${spark(l)}</details></div>`).join("")}</div>`
       : `<div class="card">${waiting(true, "Each loan in locked payoff order, with balance, rate and payoff date.")}</div>`}</section>`);
 
   /* goals */
@@ -795,22 +799,12 @@ function render(data) {
 
   /* trends: a chart only once it has 2+ data points */
   const mb = (data.history && data.history.monthly_buckets) || [];
-  const lh = data.history && data.history.loan_balances;
-  const lser = lh ? lh.series.filter(x => x.balances.filter(isNum).length >= 2) : [];
   const starts = t => `<p class="cap" style="margin:8px 0 0">${t} · starts after 2 updates</p>`;
   out.push(`<section><div class="sh"><h2>Trends</h2></div>
     <div class="grid">
       <div class="card"><div class="label"><span class="l">Cash buckets by month</span></div>
         ${mb.length > 1 ? `<div class="legend"><span><i style="background:var(--accent)"></i>Household</span><span><i style="background:var(--c2)"></i>Practice</span><span><i class="dash"></i>Tax reserve</span></div>
           <div class="chartbox"><canvas id="cashChart" aria-label="Cash buckets by month"></canvas></div>` : starts(mb.length ? "1 month so far" : "No months yet")}</div>
-      <div class="card"><div class="label"><span class="l">Loan balances</span></div>
-        ${lser.length ? `<ul class="rows" style="margin-top:10px">${lser.map(s => {
-          const vals = s.balances.filter(isNum), first = vals[0], last = vals[vals.length - 1];
-          const firstIdx = s.balances.findIndex(isNum);
-          return `<li><div class="spark"><div><div class="name" style="font-weight:600"><span class="ord num" style="display:inline-grid;width:22px;height:22px;font-size:12px;margin-right:8px">${s.loan_order}</span>${esc(cap1(s.loan_name))}</div></div>
-            <div class="delta num"><b style="color:var(--ink);font-weight:620">${money(last, false)}</b>${first !== last ? `<br>${last < first ? "↓" : "↑"} ${money(Math.abs(last - first), false)} since ${esc(dayShort(lh.dates[firstIdx]))}` : ""}</div>
-            <div class="sbox"><canvas id="loan${s.loan_order}"></canvas></div></div></li>`;
-        }).join("")}</ul>${lser.length < lh.series.length ? starts("Other loans") : ""}` : starts("Balances")}</div>
     </div></section>`);
 
   out.push(`<footer>${data.example ? "<b>EXAMPLE DATA</b> — not real numbers<br>" : ""}Private · end-to-end encrypted · times in Mountain Time<br>Source: ${esc(data.source || "snapshot sheet")}</footer>`);
@@ -828,11 +822,6 @@ function billText(b) {
   const title = m ? m[1] : b.item, note = m ? m[2] : "";
   const when = b.due_date ? fmtD(b.due_date, { weekday: "long", month: "short", day: "numeric" }) : "Due date not recorded";
   return `<div style="min-width:0"><div class="name">${esc(title)}</div><div class="cap">${esc(when)}${note ? `<span class="bill-note">${esc(note)}</span>` : ""}</div></div>`;
-}
-function oddCharges(t) {
-  if (!t || /^none$/i.test(t.trim())) return `<div class="odd" style="margin-top:12px"><div class="ic">${I.check}</div><div><b style="font-weight:600">None</b><div class="cap">Nothing unusual in the last 48 hours.</div></div></div>`;
-  const parts = t.split(/\s*;\s*|\n+/).filter(Boolean);
-  return `<div class="odd" style="margin-top:12px"><div class="ic">${I.eye}</div><div>${parts.length > 1 ? `<ul>${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : esc(t)}</div></div>`;
 }
 
 /* ------------------------------------------------ Family app: shell + tabs
