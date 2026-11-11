@@ -471,6 +471,31 @@ body.ds-open{overflow:hidden}
 .school .fact{align-items:flex-start}
 .school .fact span{flex:none}
 .school .fact b{text-align:right;min-width:0;overflow-wrap:anywhere;line-height:1.45;font-size:14px}
+
+/* Owner + Source on tasks (2026-11-11) */
+.ownline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:6px}
+.ownchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:620;line-height:1;padding:3px 8px 3px 6px;border-radius:99px;white-space:nowrap;
+  color:color-mix(in srgb, var(--k) 70%, var(--ink));box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--k) 38%, transparent)}
+.ownchip svg{flex:none;opacity:.85}
+.ownchip.none{--k:var(--c3);color:var(--muted);box-shadow:none;outline:1px dashed color-mix(in srgb, var(--muted) 55%, transparent);outline-offset:-1px}
+.srclab{font-size:12px;font-weight:560;color:var(--muted);letter-spacing:.01em;white-space:nowrap}
+.srclab.unk{color:var(--faint);font-style:italic}
+.hmeta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.ds-facts .ownchip{font-size:12.5px;vertical-align:1px}
+.needown{padding-bottom:14px}
+.needown .items li{grid-template-columns:46px 1fr}
+.needown .items li > span:last-child{display:none}
+.nmore{border-top:1px solid var(--line);margin-top:12px}
+.nmore summary{list-style:none;display:flex;align-items:center;justify-content:center;gap:4px;padding:11px 0 0;color:var(--accent);font-size:13.5px;font-weight:620;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nmore summary::-webkit-details-marker{display:none}
+.nmore summary svg{transform:rotate(90deg);transition:transform .2s}
+.nmore[open] summary svg{transform:rotate(-90deg)}
+.nmore .less,.nmore[open] summary span:first-child{display:none}
+.nmore[open] .less{display:inline}
+.nmore[open] summary{padding-bottom:4px}
+.nmore .items li:first-child{border-top:1px solid var(--line);padding-top:12px}
+.nh{border-top:1px solid var(--line);margin:12px -10px -8px;padding-top:4px}
+.allclear.owned svg{flex:none}
 </style>
 </head>
 <body>
@@ -853,6 +878,7 @@ const FI = {
   school: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/><path d="M21 9v5"/></svg>',
   cake: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7"/><path d="M5 16c2 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3 1.5 4 0"/><path d="M12 12V8M12 5.5v.01"/></svg>',
   bot: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="11" rx="3.5"/><path d="M12 4v4M9.5 13h.01M14.5 13h.01M3 13v2M21 13v2"/></svg>',
+  own: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20.5a7 7 0 0 1 14 0"/></svg>',
   chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 let TAB = "today";
@@ -894,11 +920,16 @@ function famCtx(data) {
   };
   const chip = name => { const k = byName[(name || "").toLowerCase()]; return `<span class="kidchip" style="--k:${k ? k.color : neutral}">${esc(k ? k.name : "Family")}</span>`; };
   const chips = names => (names && names.length ? names : [null]).map(chip).join("");
+  // Owner (family_items `owner`, blank = Unassigned) + Source (row value, else derived; null = Unknown)
+  const ownerChip = name => { const a = name && byName[name.toLowerCase()];
+    return a ? `<span class="ownchip" style="--k:${a.color}">${FI.own}${esc(a.name)}</span>` : `<span class="ownchip none">${FI.own}Unassigned</span>`; };
+  const srcLab = src => `<span class="srclab ${src ? "" : "unk"}">${esc(src || "Unknown")}</span>`;
+  const ownLine = e => `<div class="ownline">${ownerChip(e.owner)}${srcLab(e.source)}</div>`;
   const now = new Date(), today = dKey(now);
   const agenda = F.agenda || [];
   const live = a => a.status !== "done" && (!a.date || (a.last || a.date) >= today) && !(a.end && !a.all_day && new Date(a.end) <= now);
   const of = home => agenda.filter(a => a.home === home);
-  return { F, kids, byName, neutral, colorOf, barOf, chips, bot: (F.labels && F.labels.bot) || "", today, now, agenda, live, of, days: F.days || 14 };
+  return { F, kids, byName, neutral, colorOf, barOf, chips, ownerChip, srcLab, ownLine, bot: (F.labels && F.labels.bot) || "", today, now, agenda, live, of, days: F.days || 14 };
 }
 function fEmpty(ctx, title, what, icon) {
   const who = ctx.bot ? `${esc(ctx.bot)} hasn't added ${what} yet.` : `Nothing has been added yet.`;
@@ -920,6 +951,7 @@ function detailHTML(e, ctx) {
   else if (e.time_text) time = e.time_text;
   if (time) rows.push(["Time", esc(time)]);
   if (e.location) rows.push(["Where", esc(e.location)]);
+  if (e.task) { rows.push(["Owner", ctx.ownerChip(e.owner)]); rows.push(["Source", ctx.srcLab(e.source)]); }
   rows.push(["Status", e.status === "done" ? `<span class="ds-st done">Done</span>` : `<span class="ds-st">Open</span>`]);
   const src = (e.sources || []).map(s => s === "eagle" ? (ctx.bot || "Family notes") : SRC_LABEL[s] || s.replace(/^cal:/, "") + " calendar");
   // Reserved: optional future email link (e.g. e.source_url). Intentionally renders nothing today.
@@ -979,6 +1011,7 @@ function evRow(e, ctx) {
   return `<li class="ev tap ${nowLive ? "now" : ""}" ${tapAttrs(e, ctx)} style="--k:${ctx.colorOf(e.kids)};--kbar:${ctx.barOf(e.kids)}">${time}<div style="min-width:0">
     <div class="ev-title">${esc(e.title)}</div>
     <div class="ev-meta">${kidsHtml}${tags.join("")}${e.location ? `<span class="loc">${FI.pin}${esc(e.location)}</span>` : ""}${until}${tt}</div>
+    ${e.task ? ctx.ownLine(e) : ""}
     ${(e.notes || []).map(n => `<div class="ev-note">${esc(n)}</div>`).join("")}</div></li>`;
 }
 function agendaList(list, ctx) {
@@ -995,12 +1028,14 @@ function dueRow(i, ctx) {
   const cal = key ? `<div class="cal k" style="--k:${k}"><small>${esc(fmtD(key, { month: "short" }))}</small><b class="num">${ymd(key).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`;
   return `<li class="tap" ${tapAttrs(i, ctx)}>${cal}<div style="min-width:0"><div class="t">${esc(i.title)}</div>
     <div class="s">${ctx.chips(i.kids)}${rel ? `<span class="${cls}">${esc(rel)}</span>` : ""}</div>
+    ${i.task ? ctx.ownLine(i) : ""}
     ${(i.notes || []).map(n => `<div class="cap" style="margin-top:4px">${esc(n)}</div>`).join("")}</div><span></span></li>`;
 }
 function laterRow(i, ctx) {
   const k = ctx.colorOf(i.kids);
   return `<li class="tap" ${tapAttrs(i, ctx)}><div class="cal k" style="--k:${k}"><small>${esc(fmtD(i.date, { month: "short" }))}</small><b class="num">${ymd(i.date).getUTCDate()}</b></div><div style="min-width:0"><div class="t">${esc(i.title)}</div>
     <div class="s">${ctx.chips(i.kids)}<span>${esc(wk(i.date) + (i.date.slice(0, 4) !== ctx.today.slice(0, 4) ? ", " + i.date.slice(0, 4) : ""))}${i.start ? " · " + esc(hm(i.start).join("").toLowerCase()) : ""}</span></div>
+    ${i.task ? ctx.ownLine(i) : ""}
     ${(i.notes || []).map(n => `<div class="cap" style="margin-top:4px">${esc(n)}</div>`).join("")}</div><span></span></li>`;
 }
 function contactRows(list) {
@@ -1085,7 +1120,30 @@ function viewToday(data, ctx) {
   return (ph
     ? `<figure class="hero"><img src="${ph}" alt="The Walker family" decoding="async"><figcaption><span class="hk">The Walkers</span><h1>${greeting()}</h1><span class="hd">${when}</span></figcaption></figure>`
     : `<div class="fhead"><h1>${greeting()}</h1><div class="sub"><span class="dot"></span><span>${when}</span></div></div>`)
-    + budgetCard(data, ctx) + upNext(data, ctx);
+    + budgetCard(data, ctx) + upNext(data, ctx) + needsOwner(data, ctx);
+}
+
+/* ---- Today: "Needs an owner" (open tasks nobody has picked up) ---- */
+function unownedTasks(ctx) {
+  const key = a => a.due || a.date || "9999-99-99";
+  const list = ctx.agenda.filter(a => a.task && !a.owner && a.home !== "home" && ctx.live(a)).sort((a, b) => key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+  const health = ((ctx.F.health && ctx.F.health.items) || []).filter(i => !i.owner);
+  return { list, health, n: list.length + health.length };
+}
+function needsOwner(data, ctx) {
+  const { list, health, n } = unownedTasks(ctx), SHOW = 3;
+  const row = i => { const key = i.due || i.date, k = ctx.colorOf(i.kids); const [rel, cls] = key ? relDue(key, ctx.today) : ["", ""];
+    const cal = key ? `<div class="cal k" style="--k:${k}"><small>${esc(fmtD(key, { month: "short" }))}</small><b class="num">${ymd(key).getUTCDate()}</b></div>` : `<div class="cal nodate"><b>—</b></div>`;
+    return `<li class="tap" ${tapAttrs(i, ctx)}>${cal}<div style="min-width:0"><div class="t">${esc(i.title)}</div>
+      <div class="s">${ctx.chips(i.kids)}${rel ? `<span class="${cls}">${esc(rel)}</span>` : ""}${ctx.srcLab(i.source)}</div></div><span></span></li>`; };
+  const head = `<div class="sh"><h2>Needs an owner</h2><span class="meta num">${n ? `${n} unassigned` : ""}</span></div>`;
+  if (!n) return `<section>${head}<div class="allclear owned">${FI.own.replace(/12/g, "20")}<div>Everything has an owner<span>Every open task is picked up by someone.</span></div></div></section>`;
+  const first = list.slice(0, SHOW), rest = list.slice(SHOW);
+  const hp = health.length ? `<button class="un" data-go="health"><span class="un-ic">${TI.health}</span><span class="un-t">${health.length} health ${health.length === 1 ? "follow-up" : "follow-ups"}</span><span class="un-tab">Health${FI.chev}</span></button>` : "";
+  return `<section>${head}<div class="card needown">
+    ${first.length ? `<ul class="items">${first.map(row).join("")}</ul>` : ""}
+    ${rest.length ? `<details class="nmore"><summary><span>Show ${rest.length} more</span><span class="less">Show less</span>${FI.chev}</summary><ul class="items">${rest.map(row).join("")}</ul></details>` : ""}
+    ${hp ? `<div class="nh">${hp}</div>` : ""}</div></section>`;
 }
 
 /* ---- Calendar ---- */
@@ -1153,7 +1211,7 @@ function viewHealth(data, ctx) {
     return `<section><div class="sh"><h2><span class="pdot" style="--k:${k ? k.color : ctx.neutral}"></span>${esc(p.who)}</h2><span class="meta num">${money(tot)}</span></div>
       <div class="card"><ul class="hitems">${p.items.map(i => { const [lt, lc] = lvl[i.level] || lvl.unknown; const over = i.deadline && i.deadline.due < ctx.today;
         return `<li class="${over ? "isover" : ""}"><div class="row"><span class="name">${esc(i.item)}</span><span class="val num">${money(i.amount)}</span></div>
-          <div class="hmeta"><span class="chip ${lc === "bad" || over ? "bad" : lc === "warn" ? "warn" : "ns"}">${esc(over ? "Overdue · " + lt : lt)}</span></div>
+          <div class="hmeta"><span class="chip ${lc === "bad" || over ? "bad" : lc === "warn" ? "warn" : "ns"}">${esc(over ? "Overdue · " + lt : lt)}</span>${ctx.ownerChip(i.owner)}${ctx.srcLab(i.source)}</div>
           ${i.status && !/^status\s+unknown$/i.test(i.status.trim()) ? `<div class="cap">${esc(i.status)}</div>` : ""}${i.deadline ? dlLine(i.deadline) : ""}
           ${i.next ? `<div class="next"><b>Next:</b> ${esc(i.next)}</div>` : ""}</li>`; }).join("")}</ul></div></section>`; }).join(""));
   if ((H.deadlines || []).length) out.push(`<section><div class="sh"><h2>Other upload deadlines</h2><span class="meta">Service date + 6 months</span></div>
